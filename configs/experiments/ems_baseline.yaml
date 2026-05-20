@@ -1,0 +1,23 @@
+experiment:
+  name: ems_baseline_fixed_split
+  dataset_config: configs/datasets/ems.yaml
+  output_dir: experiments/ems_fixed_split/baseline
+  random_seed: 42
+
+data:
+  features: data/processed/EMS/ems_subject_features_segment_agg_no_pupil.csv
+  split: data/splits/EMS/ems_subject_split_60_20_20_seed42.csv
+
+features:
+  level: subject
+  include_spatial: true
+  include_temporal: true
+  include_pupil: false
+
+models: [logistic_regression, svm_rbf, random_forest, hist_gradient_boosting, mlp]
+
+evaluation:
+  split_protocol: subject_level_60_20_20
+  threshold_selection: validation_best_balanced_accuracy
+  test_policy: evaluate_once_after_validation_selection
+  calibrate_probabilities: true

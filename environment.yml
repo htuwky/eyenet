@@ -1,0 +1,22 @@
+name: eyenet
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - scipy
+  - scikit-learn
+  - openpyxl
+  - matplotlib
+  - seaborn
+  - tqdm
+  - pyyaml
+  - joblib
+  - networkx
+  - pip
+  - pip:
+      - lightgbm
+      - shap
+      - pymovements

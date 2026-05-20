@@ -1,0 +1,35 @@
+experiment:
+  name: ems_dual_stream_gated_fixed_split
+  dataset_config: configs/datasets/ems.yaml
+  output_dir: experiments/ems_fixed_split/dual_stream_gated
+  random_seed: 42
+
+data:
+  macro_segments: data/processed/EMS/ems_segment_features_no_pupil.csv
+  event_sequences: data/processed/EMS/ems_event_temporal_sequences_no_pupil.csv
+  split: data/splits/EMS/ems_subject_split_60_20_20_seed42.csv
+
+model:
+  macro_stream: macro_behavior_stream
+  event_stream: event_temporal_stream
+  fusion: scalar_gated
+  projection_dim: 64
+  hidden_dim: 64
+  attention_dim: 64
+  dropout: 0.3
+  use_segment_position: true
+  max_events: null
+
+training:
+  batch_size: 8
+  max_epochs: 100
+  patience: 15
+  learning_rate: 0.001
+  weight_decay: 0.0001
+  pos_weight: 1.5
+  gradient_clip_norm: 5.0
+
+evaluation:
+  split_protocol: subject_level_60_20_20
+  threshold_selection: validation_best_balanced_accuracy
+  test_policy: evaluate_once_after_validation_selection

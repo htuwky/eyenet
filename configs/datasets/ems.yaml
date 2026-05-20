@@ -1,0 +1,38 @@
+dataset:
+  name: EMS
+  root: D:/CodeProjects/Python/eyenet/data/raw/EMS
+  train_valid_dir: Train_Valid/Fixations
+  test_dir: Test/Fixations
+  official_split_file: Train_Valid.xlsx
+  images_dir: Images
+
+labels:
+  control_max_subject_id: 199
+  control_label: 0
+  schizophrenia_label: 1
+  test_labels_available: false
+
+stimulus:
+  image_width_px: 1024
+  image_height_px: 768
+  screen_diagonal_in: 19
+  viewing_distance_cm: 60
+  sampling_rate_hz: 1000
+  image_duration_s: 5
+  content_visible_to_model: false
+  image_field_usage: trial_boundary_only
+
+features:
+  use_pupil: false
+  keep_pupil_optional: true
+  normalize_xy: true
+
+evaluation:
+  split: official_4fold
+  metrics:
+    - auc
+    - accuracy
+    - balanced_accuracy
+    - sensitivity
+    - specificity
+    - f1

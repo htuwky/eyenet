@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Local environments
+.env
+.venv/
+venv/
+env/
+
+# Raw and generated data
+/EMS/
+/Hospital_Data/
+/data/raw/
+/data/interim/
+/data/processed/
+/outputs/
+/experiments/
+/checkpoints/
+!/data/splits/
+!/data/splits/**
+
+# Large data/model artifacts
+*.xlsx
+*.xls
+*.csv
+*.tsv
+*.parquet
+*.pkl
+*.joblib
+*.pt
+*.pth
+*.ckpt
+!/data/splits/**/*.csv
+!/data/splits/**/*.json
+
+# Rendered document artifacts
+/docs/paper_drafts/rendered_draft/
+*.pdf
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
