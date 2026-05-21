@@ -1,0 +1,30 @@
+{
+  "name": "strict_qc",
+  "source_split": "data/splits/EMS/ems_subject_split_60_20_20_seed42.csv",
+  "qc_report": "data/processed/EMS/qc/subject_qc_report.csv",
+  "usable_column": "usable_for_supervised_training",
+  "n_subjects": 150,
+  "split_summary": [
+    {
+      "split": "test",
+      "n_subjects": 30,
+      "n_hc": 15,
+      "n_sz": 15,
+      "sz_rate": 0.5
+    },
+    {
+      "split": "train",
+      "n_subjects": 91,
+      "n_hc": 48,
+      "n_sz": 43,
+      "sz_rate": 0.4725274725274725
+    },
+    {
+      "split": "valid",
+      "n_subjects": 29,
+      "n_hc": 14,
+      "n_sz": 15,
+      "sz_rate": 0.5172413793103449
+    }
+  ]
+}

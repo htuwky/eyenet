@@ -1,0 +1,258 @@
+from __future__ import annotations
+
+import copy
+import json
+from dataclasses import asdict, dataclass
+from pathlib import Path
+from typing import Any
+
+import numpy as np
+import pandas as pd
+import torch
+from torch import nn
+
+from eyenet.data.encoder_dataset import EncoderPreprocessor, build_encoder_dataloaders
+from eyenet.models.encoder import MaskedEventModel
+from eyenet.training.segment_sequence import set_seed
+
+
+@dataclass(frozen=True)
+class MaskedEventModelingConfig:
+    batch_size: int = 8
+    max_epochs: int = 50
+    patience: int = 10
+    learning_rate: float = 1e-3
+    weight_decay: float = 1e-4
+    projection_dim: int = 64
+    hidden_dim: int = 64
+    attention_dim: int = 64
+    dropout: float = 0.3
+    random_seed: int = 42
+    max_seq_len: int | None = None
+    gradient_clip_norm: float = 5.0
+    mask_probability: float = 0.15
+    min_masked_events: int = 1
+
+
+def train_masked_event_model(
+    events: pd.DataFrame,
+    split_subjects: pd.DataFrame,
+    feature_columns: list[str],
+    cfg: MaskedEventModelingConfig,
+    device: str | None = None,
+    checkpoint_dir: str | Path | None = None,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    set_seed(cfg.random_seed)
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+    loaders, preprocessor = build_encoder_dataloaders(
+        events=events,
+        split_subjects=split_subjects,
+        feature_columns=feature_columns,
+        batch_size=cfg.batch_size,
+        max_seq_len=cfg.max_seq_len,
+        balanced_train_sampler=False,
+    )
+    model = MaskedEventModel(
+        input_dim=len(feature_columns),
+        projection_dim=cfg.projection_dim,
+        hidden_dim=cfg.hidden_dim,
+        attention_dim=cfg.attention_dim,
+        dropout=cfg.dropout,
+    ).to(device)
+    optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
+    criterion = nn.MSELoss(reduction="none")
+
+    best_valid_loss = np.inf
+    best_state = None
+    best_epoch = 0
+    stopped_epoch = cfg.max_epochs
+    epochs_without_improvement = 0
+    log_rows: list[dict[str, Any]] = []
+
+    for epoch in range(1, cfg.max_epochs + 1):
+        train_loss, train_mask_rate = run_epoch(
+            model,
+            loaders["train"],
+            criterion,
+            device,
+            cfg,
+            optimizer=optimizer,
+        )
+        valid_loss, valid_mask_rate = run_epoch(
+            model,
+            loaders["valid"],
+            criterion,
+            device,
+            cfg,
+            optimizer=None,
+        )
+        log_rows.append(
+            {
+                "epoch": epoch,
+                "train_loss": train_loss,
+                "valid_loss": valid_loss,
+                "train_mask_rate": train_mask_rate,
+                "valid_mask_rate": valid_mask_rate,
+            }
+        )
+        if valid_loss < best_valid_loss:
+            best_valid_loss = valid_loss
+            best_state = copy.deepcopy(model.state_dict())
+            best_epoch = epoch
+            epochs_without_improvement = 0
+        else:
+            epochs_without_improvement += 1
+        if epochs_without_improvement >= cfg.patience:
+            stopped_epoch = epoch
+            break
+
+    if best_state is not None:
+        model.load_state_dict(best_state)
+
+    test_loss, test_mask_rate = run_epoch(
+        model,
+        loaders["test"],
+        criterion,
+        device,
+        cfg,
+        optimizer=None,
+    )
+
+    checkpoint_path = Path(checkpoint_dir) if checkpoint_dir is not None else None
+    if checkpoint_path is not None:
+        save_checkpoint(
+            checkpoint_path=checkpoint_path,
+            model=model,
+            preprocessor=preprocessor,
+            cfg=cfg,
+            feature_columns=feature_columns,
+            best_epoch=best_epoch,
+            stopped_epoch=stopped_epoch,
+            best_valid_loss=float(best_valid_loss),
+            test_loss=float(test_loss),
+            device=device,
+        )
+
+    run_info = {
+        "config": asdict(cfg),
+        "device": device,
+        "feature_columns": feature_columns,
+        "n_features": len(feature_columns),
+        "best_epoch": best_epoch,
+        "stopped_epoch": stopped_epoch,
+        "best_valid_loss": float(best_valid_loss),
+        "test_loss": float(test_loss),
+        "test_mask_rate": float(test_mask_rate),
+    }
+    return pd.DataFrame(log_rows), run_info
+
+
+def run_epoch(
+    model: MaskedEventModel,
+    loader,
+    criterion,
+    device: str,
+    cfg: MaskedEventModelingConfig,
+    optimizer=None,
+) -> tuple[float, float]:
+    training = optimizer is not None
+    model.train(training)
+    losses: list[float] = []
+    mask_rates: list[float] = []
+    for batch in loader:
+        x = batch["x"].to(device)
+        valid_mask = batch["mask"].to(device)
+        input_x, reconstruction_mask = apply_event_mask(
+            x,
+            valid_mask,
+            mask_probability=cfg.mask_probability,
+            min_masked_events=cfg.min_masked_events,
+        )
+        if training:
+            optimizer.zero_grad()
+        reconstruction, _ = model(input_x, valid_mask)
+        loss = masked_reconstruction_loss(reconstruction, x, reconstruction_mask, criterion)
+        if training:
+            loss.backward()
+            if cfg.gradient_clip_norm > 0:
+                torch.nn.utils.clip_grad_norm_(model.parameters(), cfg.gradient_clip_norm)
+            optimizer.step()
+        losses.append(float(loss.detach().cpu()))
+        mask_rates.append(float(reconstruction_mask.float().mean().detach().cpu()))
+    return float(np.mean(losses)), float(np.mean(mask_rates))
+
+
+def apply_event_mask(
+    x: torch.Tensor,
+    valid_mask: torch.Tensor,
+    mask_probability: float,
+    min_masked_events: int,
+) -> tuple[torch.Tensor, torch.Tensor]:
+    random_values = torch.rand(valid_mask.shape, device=x.device)
+    reconstruction_mask = (random_values < mask_probability) & valid_mask
+    for row in range(reconstruction_mask.shape[0]):
+        if int(reconstruction_mask[row].sum().item()) < min_masked_events:
+            valid_indices = torch.nonzero(valid_mask[row], as_tuple=False).flatten()
+            if len(valid_indices) > 0:
+                choice = valid_indices[torch.randint(0, len(valid_indices), (1,), device=x.device)]
+                reconstruction_mask[row, choice] = True
+    input_x = x.clone()
+    input_x[reconstruction_mask] = 0.0
+    return input_x, reconstruction_mask
+
+
+def masked_reconstruction_loss(
+    reconstruction: torch.Tensor,
+    target: torch.Tensor,
+    reconstruction_mask: torch.Tensor,
+    criterion,
+) -> torch.Tensor:
+    per_feature_loss = criterion(reconstruction, target).mean(dim=-1)
+    masked_loss = per_feature_loss[reconstruction_mask]
+    if masked_loss.numel() == 0:
+        return per_feature_loss.mean() * 0.0
+    return masked_loss.mean()
+
+
+def save_checkpoint(
+    checkpoint_path: Path,
+    model: MaskedEventModel,
+    preprocessor: EncoderPreprocessor,
+    cfg: MaskedEventModelingConfig,
+    feature_columns: list[str],
+    best_epoch: int,
+    stopped_epoch: int,
+    best_valid_loss: float,
+    test_loss: float,
+    device: str,
+) -> None:
+    checkpoint_path.mkdir(parents=True, exist_ok=True)
+    preprocessor.save(checkpoint_path / "preprocessor.joblib")
+    torch.save(
+        {
+            "model_state_dict": model.state_dict(),
+            "encoder_state_dict": model.encoder.state_dict(),
+            "config": asdict(cfg),
+            "feature_columns": feature_columns,
+            "input_dim": len(feature_columns),
+            "best_epoch": best_epoch,
+            "stopped_epoch": stopped_epoch,
+            "best_valid_loss": best_valid_loss,
+            "test_loss": test_loss,
+            "preprocessor_path": "preprocessor.joblib",
+            "device": device,
+            "model_type": "masked_event_model",
+        },
+        checkpoint_path / "best.pt",
+    )
+
+
+def save_masked_event_modeling_outputs(
+    output_dir: str | Path,
+    training_log: pd.DataFrame,
+    run_info: dict[str, Any],
+) -> None:
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    training_log.to_csv(output_path / "training_log.csv", index=False, encoding="utf-8-sig")
+    (output_path / "config.json").write_text(json.dumps(run_info, ensure_ascii=False, indent=2), encoding="utf-8")

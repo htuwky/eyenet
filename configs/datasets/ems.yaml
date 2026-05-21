@@ -1,10 +1,14 @@
 dataset:
-  name: EMS
-  root: D:/CodeProjects/Python/eyenet/data/raw/EMS
+  dataset_id: EMS
+  name: "Eye Movement Dataset for Schizophrenia"
+  root: data/raw/EMS
+  processed_dir: data/processed/EMS
   train_valid_dir: Train_Valid/Fixations
   test_dir: Test/Fixations
   official_split_file: Train_Valid.xlsx
   images_dir: Images
+  local_status: available
+  primary_role: supervised_downstream_benchmark
 
 labels:
   control_max_subject_id: 199
@@ -13,6 +17,8 @@ labels:
   test_labels_available: false
 
 stimulus:
+  task_type: free_viewing_static_images
+  stimulus_type: image
   image_width_px: 1024
   image_height_px: 768
   screen_diagonal_in: 19
@@ -26,13 +32,15 @@ features:
   use_pupil: false
   keep_pupil_optional: true
   normalize_xy: true
+  compute_dva: true
+  content_features_used: false
 
 evaluation:
-  split: official_4fold
-  metrics:
-    - auc
-    - accuracy
-    - balanced_accuracy
-    - sensitivity
-    - specificity
-    - f1
+  split: fixed_subject_60_20_20
+  split_file: data/splits/EMS/ems_subject_split_60_20_20_seed42.csv
+  metrics: [auc, accuracy, balanced_accuracy, sensitivity, specificity, f1]
+
+schema:
+  event_table: data/processed/EMS/ems_events.csv
+  segment_table: data/processed/EMS/ems_segment_features_no_pupil.csv
+  event_temporal_table: data/processed/EMS/ems_event_temporal_sequences_no_pupil.csv

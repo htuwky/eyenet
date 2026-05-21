@@ -1,0 +1,36 @@
+dataset:
+  dataset_id: Saliency4ASD
+  name: Saliency4ASD
+  root: data/raw/Saliency4ASD
+  processed_dir: data/processed/Saliency4ASD
+  local_status: pending_download
+  primary_role: auxiliary_atypical_visual_attention_task
+
+labels:
+  has_clinical_label: true
+  supervised_task: ASD_vs_TD
+  use_for_sz_binary: false
+  caution: do_not_merge_as_schizophrenia_label
+
+stimulus:
+  task_type: image_viewing
+  stimulus_type: image
+  sampling_rate_hz: null
+  screen_width_px: null
+  screen_height_px: null
+  screen_diagonal_in: null
+  viewing_distance_cm: null
+  content_visible_to_model: false
+
+features:
+  use_pupil: false
+  normalize_xy: true
+  compute_dva: if_metadata_available
+  content_features_used: false
+
+pretraining:
+  usable: cautious
+  recommended_tasks: [auxiliary_attention_classification, domain_robust_representation]
+
+schema:
+  event_table: data/processed/Saliency4ASD/saliency4asd_events.csv

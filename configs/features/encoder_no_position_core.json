@@ -1,0 +1,52 @@
+{
+  "name": "encoder_no_position_core",
+  "version": 1,
+  "description": "Content-agnostic, no global-position event feature schema for cross-dataset encoder pretraining.",
+  "metadata_columns": [
+    "dataset_id",
+    "subject_id",
+    "split",
+    "fold",
+    "label",
+    "segment_index",
+    "event_index_in_segment"
+  ],
+  "feature_columns": [
+    "x_norm",
+    "y_norm",
+    "duration_ms",
+    "log_duration_ms",
+    "saccade_dx_norm",
+    "saccade_dy_norm",
+    "saccade_amplitude_norm",
+    "saccade_angle_sin",
+    "saccade_angle_cos",
+    "transition_missing",
+    "is_first_event_in_segment",
+    "is_last_event_in_segment",
+    "event_index_in_segment_norm"
+  ],
+  "optional_feature_columns": [
+    "x_dva",
+    "y_dva",
+    "saccade_dx_dva",
+    "saccade_dy_dva",
+    "saccade_amplitude_dva",
+    "transition_velocity_dva_s_approx",
+    "log_transition_velocity_dva_s"
+  ],
+  "excluded_columns": [
+    "subject_event_index_norm",
+    "segment_index_norm",
+    "subject_event_index"
+  ],
+  "normalization": {
+    "fit_on": "train_only",
+    "method": "standard_scaler_after_imputation"
+  },
+  "notes": [
+    "No visual stimulus content is used.",
+    "Global subject/segment position features are excluded for cross-dataset robustness.",
+    "DVA features are optional because they require reliable hardware metadata."
+  ]
+}

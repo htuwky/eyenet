@@ -1,0 +1,35 @@
+dataset:
+  dataset_id: CRCNS_eye1
+  name: CRCNS eye-1
+  root: data/raw/CRCNS_eye1
+  processed_dir: data/processed/CRCNS_eye1
+  local_status: pending_download
+  primary_role: video_domain_self_supervised_pretraining
+
+labels:
+  has_clinical_label: false
+  supervised_task: none
+  use_for_sz_binary: false
+
+stimulus:
+  task_type: natural_video_viewing
+  stimulus_type: video
+  sampling_rate_hz: null
+  screen_width_px: null
+  screen_height_px: null
+  screen_diagonal_in: null
+  viewing_distance_cm: null
+  content_visible_to_model: false
+
+features:
+  use_pupil: false
+  normalize_xy: true
+  compute_dva: if_metadata_available
+  content_features_used: false
+
+pretraining:
+  usable: true
+  recommended_tasks: [masked_event_modeling, temporal_order_prediction, video_domain_alignment]
+
+schema:
+  event_table: data/processed/CRCNS_eye1/crcns_eye1_events.csv

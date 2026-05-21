@@ -8,15 +8,20 @@ dependencies:
   - pandas
   - scipy
   - scikit-learn
+  - pytorch
   - openpyxl
   - matplotlib
   - seaborn
   - tqdm
   - pyyaml
   - joblib
+  - h5py
+  - pyarrow
   - networkx
   - pip
   - pip:
       - lightgbm
       - shap
       - pymovements
+      - python-docx
+      - mne

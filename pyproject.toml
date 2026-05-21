@@ -7,6 +7,22 @@ name = "eyenet"
 version = "0.1.0"
 description = "Event-based eye movement modeling for adolescent mental health screening."
 requires-python = ">=3.10"
+dependencies = [
+  "numpy",
+  "pandas",
+  "scipy",
+  "scikit-learn",
+  "joblib",
+  "torch",
+  "pyyaml",
+  "openpyxl",
+  "h5py",
+  "pyarrow",
+  "tqdm",
+  "matplotlib",
+  "seaborn",
+  "pymovements",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

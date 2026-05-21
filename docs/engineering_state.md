@@ -42,5 +42,6 @@ Determinism settings are enabled for PyTorch/CUDNN seed control, but exact GPU r
 
 1. Position-feature ablation is still needed before cross-dataset training. Use `--no-segment-position` to disable segment position features.
 2. There is no deployment inference script yet. The next engineering step should load `best.pt` plus `preprocessor.joblib` and run prediction on a standardized subject table.
-3. Cross-dataset training still needs a dataset registry and a shared schema validator.
-4. Smoke-test outputs under `experiments/smoke_tests/` are for engineering verification only and should not be used as paper results.
+3. Cross-dataset training now has initial dataset configs, a dataset registry, and a shared event-table schema validator.
+4. Cross-dataset training still needs dataset adapters, a QC policy, and an encoder-ready feature schema.
+5. Smoke-test outputs under `experiments/smoke_tests/` are for engineering verification only and should not be used as paper results.

@@ -1,6 +1,7 @@
 # Python
 __pycache__/
 *.py[cod]
+*$py.class
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -25,25 +26,39 @@ env/
 !/data/splits/**
 
 # Large data/model artifacts
+*.zip
+*.7z
+*.rar
+*.tar
+*.tar.gz
+*.gz
 *.xlsx
 *.xls
 *.csv
 *.tsv
 *.parquet
+*.feather
+*.h5
+*.hdf5
+*.mat
 *.pkl
 *.joblib
 *.pt
 *.pth
 *.ckpt
+*.onnx
+*.log
 !/data/splits/**/*.csv
 !/data/splits/**/*.json
 
 # Rendered document artifacts
 /docs/paper_drafts/rendered_draft/
 *.pdf
+~$*.docx
 
 # OS/editor
 .DS_Store
 Thumbs.db
+desktop.ini
 .vscode/
 .idea/

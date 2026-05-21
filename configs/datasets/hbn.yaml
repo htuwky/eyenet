@@ -1,0 +1,36 @@
+dataset:
+  dataset_id: HBN
+  name: Healthy Brain Network
+  root: data/raw/HBN
+  processed_dir: data/processed/HBN
+  local_status: pending_access
+  primary_role: youth_domain_self_supervised_or_auxiliary_phenotype_learning
+
+labels:
+  has_clinical_label: variable
+  supervised_task: phenotype_or_dimensional_scores_if_available
+  use_for_sz_binary: false
+  caution: labels_and_age_distribution_must_be_reviewed_before_supervised_use
+
+stimulus:
+  task_type: naturalistic_or_task_based_eye_tracking
+  stimulus_type: mixed
+  sampling_rate_hz: null
+  screen_width_px: null
+  screen_height_px: null
+  screen_diagonal_in: null
+  viewing_distance_cm: null
+  content_visible_to_model: false
+
+features:
+  use_pupil: false
+  normalize_xy: true
+  compute_dva: if_metadata_available
+  content_features_used: false
+
+pretraining:
+  usable: true
+  recommended_tasks: [masked_event_modeling, segment_contrastive_learning, youth_domain_adaptation]
+
+schema:
+  event_table: data/processed/HBN/hbn_events.csv
