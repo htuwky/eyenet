@@ -7,10 +7,10 @@ This registry defines how each dataset should be used before encoder pretraining
 | Dataset | Current Status | Main Use | Supervised Disease Task | Encoder Pretraining | Notes |
 | --- | --- | --- | --- | --- | --- |
 | EMS | Available locally | Downstream benchmark | SZ vs HC | Yes, but avoid leaking test labels into model selection | Current main complete clinical dataset. |
-| GazeBase | Pending download | General eye-movement encoder pretraining | No | Yes | Large normal-subject dataset; useful for device/task robust representations. |
-| CRCNS eye-1 | Pending download | Video-viewing domain pretraining | No | Yes | Useful because the target hospital paradigm is video viewing. |
-| HBN | Pending access | Youth-domain pretraining or auxiliary phenotype learning | Variable | Yes | Must review labels, age range, and task metadata before supervised use. |
-| Saliency4ASD | Pending download | Auxiliary atypical-attention task | ASD vs TD only | Cautious | Do not merge ASD labels with SZ labels. |
+| GazeBase | Adapter complete | General eye-movement encoder pretraining | No | Yes | Raw DVA gaze converted to fixation events for video tasks `VD1,VD2`; all 322 subjects pass self-supervised QC. |
+| CRCNS eye-1 | Pending local verification | Video-viewing domain pretraining | No | Yes | Useful because the target hospital paradigm is video viewing. |
+| HBN | Adapter complete | Youth-domain pretraining or auxiliary phenotype learning | Variable | Yes | Raw gaze converted to fixation events; 1,244 subjects pass self-supervised QC. Use labels only after explicit phenotype review. |
+| Saliency4ASD | Available locally, adapter pending | Auxiliary atypical-attention task | ASD vs TD only | Cautious | Parse fixation/scanpath files. Do not merge ASD labels with SZ labels. |
 
 ## Dataset Roles
 
@@ -73,6 +73,7 @@ Every dataset must pass:
 
 ```text
 raw gaze or official fixation table
+-> fixation detection when needed
 -> dataset adapter
 -> shared event table
 -> schema validation

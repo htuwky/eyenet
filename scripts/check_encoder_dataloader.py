@@ -17,6 +17,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--max-seq-len", type=int, default=None)
     parser.add_argument("--balanced-train-sampler", action="store_true")
+    parser.add_argument("--require-label", action="store_true")
     return parser.parse_args()
 
 
@@ -32,6 +33,7 @@ def main() -> None:
         batch_size=args.batch_size,
         max_seq_len=args.max_seq_len,
         balanced_train_sampler=args.balanced_train_sampler,
+        require_label=args.require_label,
     )
 
     summary = {

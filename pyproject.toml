@@ -22,6 +22,7 @@ dependencies = [
   "matplotlib",
   "seaborn",
   "pymovements",
+  "python-docx",
 ]
 
 [tool.setuptools.packages.find]

@@ -4,24 +4,34 @@ This document tracks the required preparation before multi-dataset encoder pretr
 
 ## Current Principle
 
-The encoder should learn content-agnostic eye-movement representations. Datasets are first converted into a shared event schema, then used for self-supervised or auxiliary training.
+The encoder should learn content-agnostic eye-movement representations. The universal encoder operates on fixation events. Datasets with raw gaze samples must first run fixation detection, then enter the shared fixation-event schema.
 
 Clinical labels from different disorders must not be merged into one binary label.
+
+## Current Authority
+
+This document records the historical preparation process. For the current experiment state and next experimental order, use:
+
+```text
+docs/current_experiment_summary.md
+```
 
 ## Preparation Checklist
 
 | Item | Status | Notes |
 | --- | --- | --- |
-| Dataset configs | Done for EMS, GazeBase, CRCNS eye-1, HBN, Saliency4ASD | Pending datasets use conservative `null` metadata until downloaded/verified. |
+| Dataset configs | Done for EMS, GazeBase, CRCNS eye-1, HBN, Saliency4ASD | HBN/GazeBase/Saliency4ASD are available locally; CRCNS eye-1 is still absent. |
 | Dataset registry | Done | See `docs/dataset_registry.md`. |
 | Shared event schema | Done | See `docs/data_dictionary.md`. |
 | Schema validator | Done | `scripts/validate_dataset_schema.py`. |
 | EMS schema validation | Done | Structural validation passes; QC warnings remain. |
 | QC policy | Initial version done | `scripts/build_subject_qc_report.py` outputs subject-level flags and usable-subject lists. |
-| Dataset adapters | Pending | Required for GazeBase, CRCNS eye-1, HBN, and Saliency4ASD after download. |
+| HBN adapter | Done | `scripts/build_hbn_fixation_events.py` converts HBN raw gaze to fixation events with I-DT. |
+| GazeBase adapter | Done | `scripts/build_gazebase_fixation_events.py` converts GazeBase raw DVA gaze to fixation events with I-DT. |
+| Dataset adapters | In progress | Saliency4ASD and CRCNS eye-1 remain to be screened. |
 | Encoder-ready feature schema | Done | Current default is `encoder_no_position_core`, 13 always-available features. |
-| Encoder DataLoader | Done | Subject-level sequences with mask, labels, IDs, and train-only normalization. |
-| Masked event pretraining script | Done | EMS smoke test completed and checkpoint exports `encoder_state_dict`. |
+| Encoder DataLoader | Done | Subject-level sequences with mask, IDs, train-only normalization, and optional labels for self-supervised data. |
+| Masked event pretraining script | Done | Uses fixation span masking by default and checkpoint exports `encoder_state_dict`. |
 | Pretrained encoder downstream transfer | Initial version done | Compared from-scratch, fine-tuned pretrained, and frozen pretrained encoders on EMS. |
 | Inference script | Pending | Needed before deployment-oriented evaluation. |
 
@@ -74,7 +84,37 @@ The `--require-label-for-self-supervised` flag is recommended for EMS so the unl
 
 ## Recommended Next Step
 
-Prepare external dataset adapters and train the same masked-event encoder on multi-dataset unlabeled event streams. EMS should remain the supervised downstream benchmark for now.
+HBN and GazeBase have both passed the full adapter -> schema -> QC -> encoder-ready -> MEM downstream path. The next dataset task is Saliency4ASD adapter development, followed by CRCNS eye-1 local-file verification.
+
+## HBN Adapter Smoke Test
+
+HBN raw gaze files are converted into fixation events with a conservative I-DT detector:
+
+```powershell
+python scripts/build_hbn_fixation_events.py `
+  --max-files 20 `
+  --output data/processed/HBN/smoke/hbn_fixation_events.csv
+```
+
+Smoke-test result:
+
+```text
+n_files: 20
+n_files_with_fixations: 20
+n_subjects: 8
+n_fixation_events: 11670
+median_duration_ms: 150.0
+```
+
+The HBN smoke table passes schema validation with missing labels allowed. The encoder dataloader also works with `label=-1` placeholders for self-supervised pretraining.
+
+Masked fixation modeling now uses span masking by default:
+
+```text
+mask_strategy: span
+min_mask_span_events: 2
+max_mask_span_events: 8
+```
 
 ## EMS Filtered Variants
 

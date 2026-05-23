@@ -7,10 +7,14 @@ Scripts are CLI entrypoints. Reusable logic should live under `src/eyenet/`.
 ```text
 audit_ems_dataset.py
 build_ems_events.py
+build_hbn_fixation_events.py
 build_ems_qc_filtered_tables.py
 build_encoder_ready_table.py
+combine_encoder_ready_tables.py
+filter_encoder_ready_by_subject_qc.py
 build_filtered_subject_splits.py
 build_subject_qc_report.py
+create_self_supervised_subject_split.py
 inspect_pymovements_dataset.py
 download_pymovements_dataset.py
 validate_dataset_schema.py
@@ -43,6 +47,7 @@ train_ems_dual_stream_gated_fixed_split.py
 ```text
 check_encoder_dataloader.py
 train_masked_event_modeling_smoke.py
+train_mem_pretrain.py
 train_supervised_encoder_smoke.py
 summarize_encoder_transfer_results.py
 ```
@@ -72,13 +77,24 @@ create_paper_draft_docx.py
 
 ## Current Main Next Command
 
-After HBN adapter is implemented, the expected pipeline should be:
+The package should be installed once in editable mode:
 
 ```powershell
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
-python scripts/<build_hbn_events>.py
-python scripts/validate_dataset_schema.py --events data/processed/HBN/hbn_events.csv
-python scripts/build_subject_qc_report.py --events data/processed/HBN/hbn_events.csv --output-dir data/processed/HBN/qc
-python scripts/build_encoder_ready_table.py --events data/processed/HBN/hbn_events.csv --output-dir data/processed/HBN/encoder_ready/no_position
-python scripts/train_masked_event_modeling_smoke.py --events data/processed/HBN/encoder_ready/no_position/hbn_encoder_events.csv
+conda activate eyenet
+cd D:\CodeProjects\Python\eyenet
+python -m pip install -e .
+```
+
+Current next dataset task is Saliency4ASD adapter screening. HBN and GazeBase have already completed the shared path:
+
+```text
+raw/public dataset
+  -> shared fixation-event schema
+  -> validate_dataset_schema.py
+  -> build_subject_qc_report.py
+  -> build_encoder_ready_table.py
+  -> combine_encoder_ready_tables.py with EMS
+  -> create_self_supervised_subject_split.py
+  -> check_encoder_dataloader.py
+  -> train_mem_pretrain.py
 ```

@@ -1,5 +1,14 @@
 # Next Session Handoff
 
+For current state, use:
+
+```text
+docs/current_experiment_summary.md
+docs/engineering_state.md
+```
+
+This handoff file is historical and contains earlier HBN-first planning notes. HBN and GazeBase have since been integrated; use the current summary files above for active planning.
+
 Date: 2026-05-21
 
 ## Current State
@@ -30,7 +39,7 @@ data/raw/EMS/           present
 data/raw/GazeBase/      GazeBase_v2_0.zip present at dataset root
 data/raw/HBN/           data.zip present at dataset root
 data/raw/CRCNS_eye1/    empty
-data/raw/Saliency4ASD/  empty
+data/raw/Saliency4ASD/  downloaded/extracted locally
 ```
 
 GazeBase and HBN zip files are valid archives. They are currently at:
@@ -88,7 +97,7 @@ Environment:
 ```powershell
 conda activate eyenet
 cd D:\CodeProjects\Python\eyenet
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
+python -m pip install -e .
 ```
 
 Inspect bundled `pymovements` metadata:

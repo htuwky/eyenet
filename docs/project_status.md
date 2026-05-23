@@ -1,14 +1,22 @@
 # Project Status
 
+For the current authoritative experiment summary, see:
+
+```text
+docs/current_experiment_summary.md
+```
+
+This file is retained as a historical project-status note and may lag behind the active encoder-pretraining work.
+
 ## Goal
 
 Build a content-agnostic eye-movement screening framework that can generalize across hardware, sampling rates, and viewing paradigms after appropriate preprocessing.
 
 The model should use eye movement behavior, not visual stimulus content.
 
-## Current Dataset
+## Dataset State
 
-The active complete dataset is EMS. Other public datasets are planned for later cross-dataset encoder pretraining and domain validation.
+EMS remains the supervised downstream benchmark. HBN and GazeBase have been converted into the shared fixation-event schema for self-supervised pretraining comparisons. Saliency4ASD and CRCNS eye-1 are the remaining public dataset-screening targets.
 
 EMS local data status:
 
@@ -80,7 +88,7 @@ Current role:
 - Fixed-split summary and fusion-analysis scripts.
 - Paper draft generation script.
 
-## Immediate Next Steps
+## Historical Immediate Next Steps
 
 1. Run no-position ablations for Macro and Dual Concat.
 2. Build a standardized inference script.

@@ -3,7 +3,7 @@ dataset:
   name: GazeBase
   root: data/raw/GazeBase
   processed_dir: data/processed/GazeBase
-  local_status: pending_download
+  local_status: available_extracted_subject_zips
   primary_role: self_supervised_pretraining
 
 labels:
@@ -14,11 +14,13 @@ labels:
 stimulus:
   task_type: multiple_eye_movement_tasks
   stimulus_type: mixed_task
-  sampling_rate_hz: null
-  screen_width_px: null
-  screen_height_px: null
+  sampling_rate_hz: 1000
+  screen_width_px: 1680
+  screen_height_px: 1050
   screen_diagonal_in: null
-  viewing_distance_cm: null
+  screen_width_cm: 47.4
+  screen_height_cm: 29.7
+  viewing_distance_cm: 55
   content_visible_to_model: false
 
 features:
@@ -32,4 +34,6 @@ pretraining:
   recommended_tasks: [masked_event_modeling, segment_contrastive_learning, device_robust_encoder]
 
 schema:
-  event_table: data/processed/GazeBase/gazebase_events.csv
+  event_table: data/processed/GazeBase/gazebase_fixation_events.csv
+  adapter: raw_dva_gaze_to_fixation_events
+  default_tasks: [VD1, VD2]

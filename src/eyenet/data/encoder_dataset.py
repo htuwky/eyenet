@@ -30,10 +30,38 @@ class EncoderPreprocessor:
         joblib.dump(self, path)
 
 
+def normalize_subject_ids(frame: pd.DataFrame) -> pd.DataFrame:
+    out = frame.copy()
+    out["subject_id"] = out["subject_id"].astype(str).str.zfill(3)
+    if "dataset_id" in out.columns:
+        out["dataset_id"] = out["dataset_id"].astype(str)
+    return out
+
+
+def add_subject_key(frame: pd.DataFrame) -> pd.DataFrame:
+    out = normalize_subject_ids(frame)
+    if "dataset_id" in out.columns:
+        out["_subject_key"] = out["dataset_id"].astype(str) + "::" + out["subject_id"].astype(str)
+    else:
+        out["_subject_key"] = out["subject_id"].astype(str)
+    return out
+
+
+def align_split_dataset_id(events: pd.DataFrame, split_subjects: pd.DataFrame) -> pd.DataFrame:
+    """Backfill dataset_id for legacy single-dataset split files."""
+    split = split_subjects.copy()
+    if "dataset_id" in split.columns or "dataset_id" not in events.columns:
+        return split
+    dataset_ids = events["dataset_id"].dropna().astype(str).unique()
+    if len(dataset_ids) == 1:
+        split["dataset_id"] = dataset_ids[0]
+    return split
+
+
 def fit_encoder_preprocessor(events: pd.DataFrame, feature_columns: list[str], train_subjects: set[str]) -> EncoderPreprocessor:
     data = events.copy()
-    data["subject_id"] = data["subject_id"].astype(str).str.zfill(3)
-    train = data[data["subject_id"].isin(train_subjects)].copy()
+    data = add_subject_key(data)
+    train = data[data["_subject_key"].isin(train_subjects)].copy()
     if train.empty:
         raise ValueError("No train rows available for encoder preprocessor fitting.")
     imputer = SimpleImputer(strategy="median")
@@ -53,26 +81,37 @@ class SubjectSequenceDataset(Dataset):
         split_subjects: pd.DataFrame,
         split_name: str,
         max_seq_len: int | None = None,
+        require_label: bool = True,
     ) -> None:
         self.feature_columns = feature_columns
         self.preprocessor = preprocessor
         self.max_seq_len = max_seq_len
-        split_subjects = split_subjects.copy()
-        split_subjects["subject_id"] = split_subjects["subject_id"].astype(str).str.zfill(3)
-        subject_ids = set(split_subjects.loc[split_subjects["split"] == split_name, "subject_id"])
-        data = events.copy()
-        data["subject_id"] = data["subject_id"].astype(str).str.zfill(3)
-        data = data[data["subject_id"].isin(subject_ids)].copy()
-        data = data.sort_values(["subject_id", "segment_index", "event_index_in_segment"]).reset_index(drop=True)
+        self.require_label = require_label
+        split_subjects = align_split_dataset_id(events, split_subjects)
+        split_subjects = add_subject_key(split_subjects)
+        subject_keys = set(split_subjects.loc[split_subjects["split"] == split_name, "_subject_key"])
+        data = add_subject_key(events)
+        data = data[data["_subject_key"].isin(subject_keys)].copy()
+        data = data.sort_values(["dataset_id", "subject_id", "segment_index", "event_index_in_segment"]).reset_index(drop=True)
         if data.empty:
             raise ValueError(f"No encoder events found for split: {split_name}")
 
         self.samples: list[dict[str, Any]] = []
-        for subject_id, subject_df in data.groupby("subject_id", sort=True):
+        for _, subject_df in data.groupby("_subject_key", sort=True):
+            subject_id = str(subject_df["subject_id"].iloc[0])
             features = self.preprocessor.transform(subject_df)
             if self.max_seq_len is not None and len(features) > self.max_seq_len:
                 features = features[: self.max_seq_len]
-            label = int(pd.to_numeric(subject_df["label"], errors="coerce").dropna().iloc[0])
+            label_values = pd.to_numeric(subject_df["label"], errors="coerce").dropna()
+            if label_values.empty:
+                if self.require_label:
+                    raise ValueError(
+                        f"Subject {subject_id} in split {split_name} has no label. "
+                        "Use require_label=False for self-supervised encoder pretraining."
+                    )
+                label = -1
+            else:
+                label = int(label_values.iloc[0])
             dataset_id = str(subject_df["dataset_id"].dropna().iloc[0])
             self.samples.append(
                 {
@@ -127,10 +166,11 @@ def build_encoder_dataloaders(
     max_seq_len: int | None = None,
     num_workers: int = 0,
     balanced_train_sampler: bool = False,
+    require_label: bool = True,
 ) -> tuple[dict[str, DataLoader], EncoderPreprocessor]:
-    split_subjects = split_subjects.copy()
-    split_subjects["subject_id"] = split_subjects["subject_id"].astype(str).str.zfill(3)
-    train_subjects = set(split_subjects.loc[split_subjects["split"] == "train", "subject_id"])
+    split_subjects = align_split_dataset_id(events, split_subjects)
+    split_subjects = add_subject_key(split_subjects)
+    train_subjects = set(split_subjects.loc[split_subjects["split"] == "train", "_subject_key"])
     preprocessor = fit_encoder_preprocessor(events, feature_columns, train_subjects=train_subjects)
     loaders: dict[str, DataLoader] = {}
     for split_name in ["train", "valid", "test"]:
@@ -141,10 +181,13 @@ def build_encoder_dataloaders(
             split_subjects=split_subjects,
             split_name=split_name,
             max_seq_len=max_seq_len,
+            require_label=require_label,
         )
         sampler = None
         shuffle = split_name == "train"
         if split_name == "train" and balanced_train_sampler:
+            if not require_label:
+                raise ValueError("balanced_train_sampler requires labels and cannot be used with require_label=False.")
             labels = np.array([sample["label"] for sample in dataset.samples], dtype=int)
             class_counts = np.bincount(labels)
             sample_weights = np.array([1.0 / class_counts[label] for label in labels], dtype=np.float64)

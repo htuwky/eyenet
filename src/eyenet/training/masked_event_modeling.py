@@ -32,6 +32,10 @@ class MaskedEventModelingConfig:
     gradient_clip_norm: float = 5.0
     mask_probability: float = 0.15
     min_masked_events: int = 1
+    mask_strategy: str = "span"
+    min_mask_span_events: int = 2
+    max_mask_span_events: int = 8
+    require_label: bool = False
 
 
 def train_masked_event_model(
@@ -51,6 +55,7 @@ def train_masked_event_model(
         batch_size=cfg.batch_size,
         max_seq_len=cfg.max_seq_len,
         balanced_train_sampler=False,
+        require_label=cfg.require_label,
     )
     model = MaskedEventModel(
         input_dim=len(feature_columns),
@@ -167,6 +172,9 @@ def run_epoch(
             valid_mask,
             mask_probability=cfg.mask_probability,
             min_masked_events=cfg.min_masked_events,
+            mask_strategy=cfg.mask_strategy,
+            min_mask_span_events=cfg.min_mask_span_events,
+            max_mask_span_events=cfg.max_mask_span_events,
         )
         if training:
             optimizer.zero_grad()
@@ -187,18 +195,76 @@ def apply_event_mask(
     valid_mask: torch.Tensor,
     mask_probability: float,
     min_masked_events: int,
+    mask_strategy: str = "span",
+    min_mask_span_events: int = 2,
+    max_mask_span_events: int = 8,
 ) -> tuple[torch.Tensor, torch.Tensor]:
-    random_values = torch.rand(valid_mask.shape, device=x.device)
-    reconstruction_mask = (random_values < mask_probability) & valid_mask
+    if mask_strategy == "random":
+        random_values = torch.rand(valid_mask.shape, device=x.device)
+        reconstruction_mask = (random_values < mask_probability) & valid_mask
+    elif mask_strategy == "span":
+        reconstruction_mask = build_span_mask(
+            valid_mask,
+            mask_probability=mask_probability,
+            min_masked_events=min_masked_events,
+            min_span_events=min_mask_span_events,
+            max_span_events=max_mask_span_events,
+        )
+    else:
+        raise ValueError(f"Unsupported mask_strategy: {mask_strategy}. Use 'span' or 'random'.")
+
+    ensure_minimum_masked_events(reconstruction_mask, valid_mask, min_masked_events)
+    input_x = x.clone()
+    input_x[reconstruction_mask] = 0.0
+    return input_x, reconstruction_mask
+
+
+def build_span_mask(
+    valid_mask: torch.Tensor,
+    mask_probability: float,
+    min_masked_events: int,
+    min_span_events: int,
+    max_span_events: int,
+) -> torch.Tensor:
+    reconstruction_mask = torch.zeros_like(valid_mask, dtype=torch.bool)
+    min_span_events = max(1, int(min_span_events))
+    max_span_events = max(min_span_events, int(max_span_events))
+    for row in range(valid_mask.shape[0]):
+        valid_indices = torch.nonzero(valid_mask[row], as_tuple=False).flatten()
+        n_valid = int(len(valid_indices))
+        if n_valid == 0:
+            continue
+        target = max(int(round(n_valid * mask_probability)), int(min_masked_events))
+        target = min(target, n_valid)
+        attempts = 0
+        while int(reconstruction_mask[row].sum().item()) < target and attempts < target * 10:
+            span_len = int(
+                torch.randint(
+                    low=min_span_events,
+                    high=max_span_events + 1,
+                    size=(1,),
+                    device=valid_mask.device,
+                ).item()
+            )
+            start_offset = int(torch.randint(low=0, high=n_valid, size=(1,), device=valid_mask.device).item())
+            selected = valid_indices[start_offset : min(start_offset + span_len, n_valid)]
+            reconstruction_mask[row, selected] = True
+            attempts += 1
+    return reconstruction_mask & valid_mask
+
+
+def ensure_minimum_masked_events(
+    reconstruction_mask: torch.Tensor,
+    valid_mask: torch.Tensor,
+    min_masked_events: int,
+) -> None:
     for row in range(reconstruction_mask.shape[0]):
         if int(reconstruction_mask[row].sum().item()) < min_masked_events:
             valid_indices = torch.nonzero(valid_mask[row], as_tuple=False).flatten()
             if len(valid_indices) > 0:
-                choice = valid_indices[torch.randint(0, len(valid_indices), (1,), device=x.device)]
-                reconstruction_mask[row, choice] = True
-    input_x = x.clone()
-    input_x[reconstruction_mask] = 0.0
-    return input_x, reconstruction_mask
+                n_needed = min(int(min_masked_events), len(valid_indices))
+                permutation = torch.randperm(len(valid_indices), device=valid_mask.device)[:n_needed]
+                reconstruction_mask[row, valid_indices[permutation]] = True
 
 
 def masked_reconstruction_loss(

@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-median-duration-ms", type=float, default=2000.0)
     parser.add_argument("--allow-unlabeled-supervised", action="store_true")
     parser.add_argument("--require-label-for-self-supervised", action="store_true")
+    parser.add_argument("--max-failed-display", type=int, default=50)
     return parser.parse_args()
 
 
@@ -69,7 +70,10 @@ def main() -> None:
     if failed.empty:
         print("None")
     else:
-        print(failed[columns].to_string(index=False))
+        display = failed[columns].head(args.max_failed_display)
+        print(display.to_string(index=False))
+        if len(failed) > len(display):
+            print(f"... truncated {len(failed) - len(display)} additional failed subjects")
     print()
     print(f"Outputs written to: {Path(args.output_dir)}")
 

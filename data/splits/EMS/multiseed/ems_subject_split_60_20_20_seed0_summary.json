@@ -1,0 +1,61 @@
+{
+  "name": "ems_subject_split_60_20_20",
+  "seed": 0,
+  "ratios": {
+    "train": 0.6,
+    "valid": 0.2,
+    "test": 0.2
+  },
+  "n_subjects": 160,
+  "label_definition": {
+    "0": "healthy_control",
+    "1": "schizophrenia"
+  },
+  "split_summary": [
+    {
+      "split": "test",
+      "n_subjects": 32,
+      "n_hc": 16,
+      "n_sz": 16,
+      "sz_rate": 0.5,
+      "official_fold_counts": {
+        "Set_0": 10,
+        "Set_1": 6,
+        "Set_2": 8,
+        "Set_3": 8
+      }
+    },
+    {
+      "split": "train",
+      "n_subjects": 96,
+      "n_hc": 48,
+      "n_sz": 48,
+      "sz_rate": 0.5,
+      "official_fold_counts": {
+        "Set_0": 23,
+        "Set_1": 26,
+        "Set_2": 25,
+        "Set_3": 22
+      }
+    },
+    {
+      "split": "valid",
+      "n_subjects": 32,
+      "n_hc": 16,
+      "n_sz": 16,
+      "sz_rate": 0.5,
+      "official_fold_counts": {
+        "Set_0": 7,
+        "Set_1": 8,
+        "Set_2": 7,
+        "Set_3": 10
+      }
+    }
+  ],
+  "protocol_notes": [
+    "Subject-level split.",
+    "Stratified by label.",
+    "Official EMS folds are retained only as metadata.",
+    "Use train for fitting, valid for early stopping/threshold/calibration/model selection, and test only once for final reporting."
+  ]
+}

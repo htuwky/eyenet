@@ -42,10 +42,15 @@ src/eyenet/
 
 The model is designed to use eye-movement behavior, not stimulus content.
 
+Universal encoder input unit:
+
+- fixation events
+- raw gaze is used only to derive fixation events when a dataset does not already provide them
+
 Allowed as model inputs:
 
-- normalized gaze/fixation coordinates
-- event duration
+- normalized fixation coordinates
+- fixation duration
 - saccade or transition features
 - local event order within a segment
 - missingness/validity flags
@@ -89,21 +94,25 @@ Use the `eyenet` conda environment:
 ```powershell
 conda activate eyenet
 cd D:\CodeProjects\Python\eyenet
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
+python -m pip install -e .
 ```
 
-For Codex-run commands, prefer:
+Verify the editable install:
 
 ```powershell
-conda run -n eyenet cmd /S /C "set PYTHONPATH=D:\CodeProjects\Python\eyenet\src&& python <script>"
+python -c "import eyenet; print(eyenet.__file__)"
+```
+
+Do not rely on ad hoc `PYTHONPATH` exports or per-script `sys.path.insert(...)` blocks as the normal workflow. The project uses a `src/` layout and should be run as an editable Python package during development.
+
+For Codex-run commands, prefer invoking the installed environment directly:
+
+```powershell
+conda run -n eyenet python <script>
 ```
 
 ## Next Engineering Priority
 
-The next code task is HBN adapter development:
+The current completed adapters are HBN and GazeBase. The next code task is Saliency4ASD adapter development, followed by CRCNS eye-1 if the local raw files are available.
 
-```text
-HBN raw CSV zip -> shared EyeNet event schema -> QC -> encoder-ready table -> masked-event smoke test
-```
-
-GazeBase should follow after HBN because GazeBase is larger and nested by round/subject/task.
+Each new dataset should use the fixed baseline encoder settings first. Do not begin broad hyperparameter search until candidate data sources have been screened.

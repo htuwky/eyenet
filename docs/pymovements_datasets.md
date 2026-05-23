@@ -43,17 +43,17 @@ GazeBase provides gaze samples in degrees of visual angle. It is not already an 
 
 ## Commands
 
+These commands assume the project has been installed in editable mode with `python -m pip install -e .`.
+
 List available `pymovements` datasets:
 
 ```powershell
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
 python scripts/inspect_pymovements_dataset.py --list
 ```
 
 Inspect GazeBase metadata without downloading:
 
 ```powershell
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
 python scripts/inspect_pymovements_dataset.py `
   --dataset GazeBase `
   --root data/raw/GazeBase `
@@ -63,7 +63,6 @@ python scripts/inspect_pymovements_dataset.py `
 Dry-run the GazeBase downloader:
 
 ```powershell
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
 python scripts/download_pymovements_dataset.py `
   --dataset GazeBase `
   --root data/raw/GazeBase `
@@ -74,7 +73,6 @@ python scripts/download_pymovements_dataset.py `
 Download GazeBase:
 
 ```powershell
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
 python scripts/download_pymovements_dataset.py `
   --dataset GazeBase `
   --root data/raw/GazeBase `

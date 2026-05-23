@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import csv
 from pathlib import Path
 
 from docx import Document
@@ -12,14 +11,33 @@ from docx.shared import Inches, Pt, RGBColor
 
 
 OUTPUT = Path("docs/paper_drafts/content_agnostic_eye_movement_screening_draft.docx")
-RESULT_TABLE = Path("experiments/ems_fixed_split/summary/fixed_split_publication_table.csv")
-PRIMARY_METRICS = Path("experiments/ems_fixed_split/summary/fixed_split_primary_test_metrics.csv")
-GATE_SUMMARY = Path("experiments/ems_fixed_split/summary/dual_stream_fusion/gated_gate_summary_by_split.csv")
 
 
-def read_csv(path: Path) -> list[dict[str, str]]:
-    with path.open("r", encoding="utf-8-sig", newline="") as handle:
-        return list(csv.DictReader(handle))
+EMS_MULTI_SEED_ROWS = [
+    ["From scratch", "0.784 +/- 0.069", "0.700 +/- 0.114", "0.800", "0.600", "Supervised encoder baseline."],
+    ["EMS MEM frozen", "0.716 +/- 0.059", "0.619 +/- 0.081", "0.813", "0.425", "Pretrained encoder alone is insufficient."],
+    ["EMS MEM fine-tune", "0.832 +/- 0.065", "0.763 +/- 0.052", "0.800", "0.725", "Best multi-seed encoder route so far."],
+]
+
+
+PUBLIC_PRETRAIN_ROWS = [
+    ["None", "from scratch", "0.828", "0.719", "0.813", "0.625", "Seed42 supervised encoder baseline."],
+    ["EMS-only MEM", "fine-tune", "0.891", "0.750", "0.938", "0.563", "Highest seed42 AUC."],
+    ["EMS-only MEM", "frozen", "0.848", "0.688", "0.938", "0.438", "Frozen probing underperforms fine-tuning."],
+    ["HBN+EMS MEM", "fine-tune", "0.859", "0.719", "0.875", "0.563", "Pipeline works, but no gain over EMS-only."],
+    ["HBN+EMS MEM", "frozen", "0.824", "0.719", "0.938", "0.500", "Some ranking transfer, weak specificity."],
+    ["GazeBase+EMS MEM", "fine-tune", "0.863", "0.813", "0.750", "0.875", "More conservative, high specificity."],
+    ["GazeBase+EMS MEM", "frozen", "0.863", "0.688", "0.938", "0.438", "Ranking transfers; threshold boundary needs adaptation."],
+]
+
+
+DATASET_ROWS = [
+    ["EMS", "Complete", "160", "225,159", "Main SZ/HC downstream benchmark."],
+    ["HBN", "Adapter complete", "1,244 usable", "1,684,382 after QC", "Public unlabeled pretraining source; did not improve over EMS-only in seed42."],
+    ["GazeBase", "Adapter complete", "322", "843,517", "Video tasks VD1/VD2; high-specificity downstream operating point."],
+    ["Saliency4ASD", "Pending", "TBD", "TBD", "Use cautiously; ASD labels must not be merged with SZ/HC."],
+    ["CRCNS eye-1", "Pending", "TBD", "TBD", "Local raw-file status must be verified."],
+]
 
 
 def set_cell_shading(cell, fill: str) -> None:
@@ -41,7 +59,7 @@ def set_cell_width(cell, width_dxa: int) -> None:
     tc_w.set(qn("w:type"), "dxa")
 
 
-def set_cell_margins(cell, top=90, start=120, bottom=90, end=120) -> None:
+def set_cell_margins(cell, top=90, start=110, bottom=90, end=110) -> None:
     tc_pr = cell._tc.get_or_add_tcPr()
     tc_mar = tc_pr.first_child_found_in("w:tcMar")
     if tc_mar is None:
@@ -68,13 +86,6 @@ def set_table_geometry(table, widths: list[int]) -> None:
     tbl_w.set(qn("w:w"), str(sum(widths)))
     tbl_w.set(qn("w:type"), "dxa")
 
-    tbl_ind = tbl_pr.find(qn("w:tblInd"))
-    if tbl_ind is None:
-        tbl_ind = OxmlElement("w:tblInd")
-        tbl_pr.append(tbl_ind)
-    tbl_ind.set(qn("w:w"), "0")
-    tbl_ind.set(qn("w:type"), "dxa")
-
     tbl_grid = tbl.tblGrid
     for child in list(tbl_grid):
         tbl_grid.remove(child)
@@ -94,31 +105,31 @@ def set_doc_defaults(doc: Document) -> None:
     section = doc.sections[0]
     section.page_width = Inches(8.5)
     section.page_height = Inches(11)
-    section.top_margin = Inches(0.85)
-    section.bottom_margin = Inches(0.85)
-    section.left_margin = Inches(0.85)
-    section.right_margin = Inches(0.85)
+    section.top_margin = Inches(0.82)
+    section.bottom_margin = Inches(0.82)
+    section.left_margin = Inches(0.82)
+    section.right_margin = Inches(0.82)
 
     styles = doc.styles
     normal = styles["Normal"]
     normal.font.name = "Calibri"
     normal._element.rPr.rFonts.set(qn("w:eastAsia"), "Microsoft YaHei")
-    normal.font.size = Pt(10.5)
+    normal.font.size = Pt(10.2)
     normal.paragraph_format.line_spacing = 1.12
     normal.paragraph_format.space_after = Pt(5)
 
     title = styles["Title"]
     title.font.name = "Calibri"
     title._element.rPr.rFonts.set(qn("w:eastAsia"), "Microsoft YaHei")
-    title.font.size = Pt(21)
+    title.font.size = Pt(20)
     title.font.bold = True
     title.font.color.rgb = RGBColor(0x0B, 0x25, 0x45)
     title.paragraph_format.space_after = Pt(8)
 
     for style_name, size, color, before, after in [
-        ("Heading 1", 15, RGBColor(0x1F, 0x4D, 0x78), 13, 6),
-        ("Heading 2", 12.5, RGBColor(0x2E, 0x74, 0xB5), 9, 4),
-        ("Heading 3", 11.5, RGBColor(0x1F, 0x4D, 0x78), 7, 3),
+        ("Heading 1", 15, RGBColor(0x1F, 0x4D, 0x78), 12, 5),
+        ("Heading 2", 12.5, RGBColor(0x2E, 0x74, 0xB5), 8, 3),
+        ("Heading 3", 11.5, RGBColor(0x1F, 0x4D, 0x78), 6, 2),
     ]:
         style = styles[style_name]
         style.font.name = "Calibri"
@@ -133,7 +144,7 @@ def set_doc_defaults(doc: Document) -> None:
 def add_footer(doc: Document) -> None:
     paragraph = doc.sections[0].footer.paragraphs[0]
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
-    run = paragraph.add_run("Content-Agnostic Eye Movement Screening Model | Working Draft")
+    run = paragraph.add_run("EyeNet content-agnostic screening model | working draft | 2026-05-23")
     run.font.size = Pt(8.5)
     run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
@@ -168,90 +179,36 @@ def add_table(doc: Document, headers: list[str], rows: list[list[str]], widths: 
             paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
             for run in paragraph.runs:
                 run.bold = True
-                run.font.size = Pt(8.5)
+                run.font.size = Pt(8.2)
     for row in rows:
         cells = table.add_row().cells
         for idx, text in enumerate(row):
             cells[idx].text = text
             for paragraph in cells[idx].paragraphs:
                 paragraph.paragraph_format.space_after = Pt(0)
-                if idx > 0 and len(text) < 12:
+                if idx > 0 and len(text) < 16:
                     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
                 for run in paragraph.runs:
-                    run.font.size = Pt(8.5)
+                    run.font.size = Pt(8.1)
     set_table_geometry(table, widths)
     doc.add_paragraph()
-
-
-def metric_rows_for_doc() -> list[list[str]]:
-    rows = read_csv(RESULT_TABLE)
-    name_map = {
-        "dual_stream_concat": "Dual concat",
-        "macro_behavior_stream": "Macro only",
-        "ml_hist_gradient_boosting": "ML HistGB",
-        "event_temporal_stream": "Event only",
-        "dual_stream_gated": "Dual gated",
-        "ml_svm_rbf": "ML SVM-RBF",
-        "ml_random_forest": "ML RandomForest",
-        "ml_logistic_regression": "ML Logistic",
-        "ml_mlp": "MLP baseline",
-    }
-    ordered = [
-        "ML HistGB",
-        "ML SVM-RBF",
-        "Macro only",
-        "Event only",
-        "Dual concat",
-        "Dual gated",
-    ]
-    converted = []
-    for row in rows:
-        display = name_map.get(row["display_name"], row["display_name"])
-        if display not in ordered:
-            continue
-        converted.append(
-            [
-                display,
-                row["auc"],
-                row["accuracy"],
-                row["balanced_accuracy"],
-                row["sensitivity"],
-                row["specificity"],
-                row["f1"],
-                row["confusion_matrix"],
-            ]
-        )
-    converted.sort(key=lambda row: ordered.index(row[0]))
-    return converted
-
-
-def primary_metric_lookup() -> dict[str, dict[str, str]]:
-    rows = read_csv(PRIMARY_METRICS)
-    return {row["display_name"]: row for row in rows}
 
 
 def add_title_block(doc: Document) -> None:
     title = doc.add_paragraph(style="Title")
     title.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    title.add_run("基于内容解耦眼动特征的精神疾病初步筛查模型研究")
+    title.add_run("基于内容解耦眼动表征的精神疾病初步筛查模型研究")
 
     subtitle = doc.add_paragraph()
     subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    run = subtitle.add_run("EMS 数据集固定划分实验与双流模型工作草稿 | 2026-05-20")
+    run = subtitle.add_run("EMS 下游验证、公共数据自监督预训练与工程化阶段总结 | 2026-05-23")
     run.italic = True
     run.font.size = Pt(10)
     run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-    add_para(
-        doc,
-        "本文档是当前项目的论文雏形，记录截至目前已经完成的数据处理、模型设计、固定划分实验、双流融合实验和阶段性结论。后续接入跨数据集预训练和自采数据微调后，可在此基础上继续扩展为完整论文。",
-    )
-
 
 def build_doc() -> None:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
-    metrics = primary_metric_lookup()
-    gate_rows = read_csv(GATE_SUMMARY)
 
     doc = Document()
     set_doc_defaults(doc)
@@ -261,188 +218,132 @@ def build_doc() -> None:
     doc.add_heading("摘要草稿", level=1)
     add_para(
         doc,
-        "精神疾病筛查通常依赖量表、临床访谈和专门范式，客观、低负担、可迁移的初筛工具仍然不足。本研究围绕内容解耦的眼动行为建模展开，目标是构建一种不依赖具体图片或视频语义、可适配不同采集设备和观看范式的初步筛查模型。研究首先基于 EMS 数据集完成统一预处理、fixation/saccade 事件建模、窗口级宏观行为特征提取和事件级动态序列构建；随后在 subject-level 60/20/20 固定划分下比较传统机器学习、Macro-Behavior Stream、Event-Temporal Stream、双流 concat 融合和双流 gated 融合。当前结果显示，Dual concat 获得最高 AUC 0.898，Macro only 获得 AUC 0.891，HistGradientBoosting 获得最高 balanced accuracy 0.844。门控融合在小样本条件下出现向 Macro 单流塌缩，test macro gate 平均值为 0.963，因而不作为最终主模型。本阶段结果支持采用 Macro-Behavior 主干和 Event-Temporal 辅助流的内容解耦双流建模路线，后续将接入更多公开眼动数据集进行跨数据集预训练和泛化验证。",
+        "本研究面向精神疾病风险的低负担初步筛查，构建一种不依赖图片、视频语义或任务内容的眼动行为建模流程。当前工程已完成 EMS 下游 SZ/HC 基准、HBN 与 GazeBase 公共眼动数据适配、统一 fixation-event schema、13 维 no-position encoder-ready 表征，以及 masked event modeling (MEM) 自监督预训练。五个 EMS stratified subject split 的结果显示，EMS-only MEM 预训练后进行监督 fine-tuning，相比从零训练 encoder，将平均 test AUC 从 0.784 提升到 0.832，将平均 balanced accuracy 从 0.700 提升到 0.763。HBN 已完成 pipeline 接入，但在当前固定 split 上未超过 EMS-only MEM；GazeBase+EMS 在单 split 上提供更高 specificity 的保守操作点。当前结果支持内容解耦眼动表征路线，但仍属于小样本初步证据，后续需要完成 Saliency4ASD/CRCNS 数据源筛选并进行受控消融。",
     )
 
-    doc.add_heading("1. 研究目标与核心假设", level=1)
+    doc.add_heading("1. 研究目标与边界", level=1)
     add_para(
         doc,
-        "本项目的核心目标不是建立只适用于 EMS 数据集或某一套图片刺激的分类器，而是建立一套面向医院初步筛查场景的内容解耦眼动模型。该模型应尽量只依赖跨设备、跨范式可获得的公共眼动信息，例如 gaze 坐标、timestamp、validity、采样率、屏幕参数和观看距离。图片编号、视频内容、AOI 语义、任务答案和瞳孔直径不作为核心输入。",
+        "本项目的目标不是训练一个只适用于 EMS 图片范式的分类器，而是建立一套可迁移的眼动表征学习流程。模型输入限制在跨设备、跨范式可获得的公共眼动信息，例如 fixation 坐标、duration、transition/saccade 特征、局部事件顺序和 missingness 标记。图片编号、视频内容、AOI 语义、任务答案和疾病无关标签不作为核心 encoder 输入。",
     )
     add_bullets(
         doc,
         [
-            "临床目标：用于青少年或一般人群的初步风险筛查，而不是替代临床诊断。",
-            "工程目标：支持后续接入不同硬件、不同采样率和不同观看范式的数据。",
-            "建模目标：通过宏观行为流和微观事件时序流形成互补表征，提高模型的排序能力和筛查灵敏度。",
-            "论文目标：证明内容解耦、跨数据集可扩展的眼动建模路线具有可行性，并为后续多数据集预训练和医院部署建立实验基础。",
+            "临床定位：初步筛查和风险排序，不替代临床诊断。",
+            "监督边界：EMS 的 SZ/HC 标签是当前下游基准；ASD、HBN 表型或其他疾病标签不能合并成一个通用疾病标签。",
+            "预训练策略：公共数据优先用于自监督 MEM，不直接定义 SZ/HC 决策边界。",
+            "评估原则：模型选择依赖 validation；test 只用于最终报告；小样本结果必须报告 multi-seed mean/std。",
         ],
     )
 
-    doc.add_heading("2. 数据处理路线", level=1)
+    doc.add_heading("2. 数据处理与统一输入", level=1)
     add_para(
         doc,
-        "当前阶段已完成 EMS 数据集的完整处理。处理流程强调统一模态和内容解耦：原始 fixation 数据被转化为事件表、窗口级宏观行为特征表和事件级时序表。IMAGE 字段仅作为原始试次边界或记录来源，不作为模型输入特征；模型不读取图片内容，也不使用图片语义。",
+        "当前统一输入单位是 fixation event。HBN 和 GazeBase 这类 raw gaze 数据只作为 adapter 输入，必须先经 I-DT fixation detection 转成共享事件表，再进入 QC、encoder-ready 转换和 MEM 训练。GazeBase 的原始 x/y 已经是 DVA；HBN 是像素坐标。两者原始格式不同，但最终都统一到同一套 fixation-event schema 和 13 维 encoder feature schema。",
+    )
+    add_table(
+        doc,
+        ["Dataset", "Status", "Subjects", "Fixation events", "Notes"],
+        DATASET_ROWS,
+        [1350, 1500, 1050, 1450, 4010],
+    )
+
+    doc.add_heading("3. 当前 encoder 和 MEM 配置", level=1)
+    add_para(
+        doc,
+        "当前 encoder 是保守的小模型基线：13 维事件特征先投影到 64 维，再经 1-layer bidirectional GRU 和 masked attention pooling 得到 subject embedding。MEM 预训练在 masked fixation spans 上重建原始标准化事件特征。该设置的目的是先建立稳定、可解释、可复现实验基线，而不是一次性追求最大模型容量。",
+    )
+    add_table(
+        doc,
+        ["Component", "Current setting"],
+        [
+            ["Input", "[batch, sequence_length, 13]"],
+            ["Projection", "Linear(13 -> 64) + LayerNorm + ReLU + Dropout(0.3)"],
+            ["Temporal encoder", "1-layer BiGRU, hidden_dim=64, event embedding=128"],
+            ["Pooling", "Masked attention pooling"],
+            ["MEM objective", "Masked MSE reconstruction on span-masked fixation features"],
+            ["Optimizer", "AdamW, learning_rate=1e-3, weight_decay=1e-4"],
+            ["Training defaults", "batch_size=8, max_seq_len=1500, mask_probability=0.30, span length 2-8"],
+        ],
+        [2500, 6860],
+    )
+
+    doc.add_heading("4. EMS 多 seed 基准结果", level=1)
+    add_para(
+        doc,
+        "为避免单个 32-subject test split 的偶然性，当前已完成五个 EMS stratified subject splits 的 encoder 对照。主要结论是：EMS-only MEM 作为初始化再进行下游 supervised fine-tuning，优于从零训练；冻结 encoder 的 probing 表现较差，说明自监督表征需要任务标签适配才能转化为 SZ/HC 判别性能。",
+    )
+    add_table(
+        doc,
+        ["Experiment", "AUC", "Bal Acc", "Sens", "Spec", "Interpretation"],
+        EMS_MULTI_SEED_ROWS,
+        [1650, 1250, 1350, 900, 900, 3310],
+    )
+
+    doc.add_heading("5. 公共数据预训练初步结果", level=1)
+    add_para(
+        doc,
+        "HBN 与 GazeBase 已经完成同一套处理流程：raw gaze -> fixation events -> schema validation -> QC -> encoder-ready -> MEM -> EMS downstream。当前固定 split 结果显示，公共数据不是越多越好；是否有益取决于分布匹配和下游操作点。HBN+EMS 没有超过 EMS-only；GazeBase+EMS 的 AUC 低于 EMS-only seed42，但 specificity 和 balanced accuracy 更高，可能形成更保守的筛查阈值候选。",
+    )
+    add_table(
+        doc,
+        ["Pretraining", "Mode", "AUC", "Bal Acc", "Sens", "Spec", "Notes"],
+        PUBLIC_PRETRAIN_ROWS,
+        [1450, 1000, 700, 850, 700, 700, 3960],
+    )
+
+    doc.add_heading("6. 阶段性判断", level=1)
+    add_numbered(
+        doc,
+        [
+            "内容解耦 fixation-event pipeline 已经成立，EMS、HBN、GazeBase 可以进入同一 encoder-ready schema。",
+            "当前最稳的 encoder 证据来自 EMS-only MEM fine-tune，多 seed 下平均 AUC 和 balanced accuracy 均优于 from scratch。",
+            "HBN 技术链路已完成，但目前不作为优先优化路线。",
+            "GazeBase 值得保留，因为它提供了与 EMS-only 不同的错误模式：更高 specificity、更低 sensitivity。",
+            "正式超参数消融应推迟到 Saliency4ASD 和 CRCNS 至少完成基础数据源筛选之后。",
+        ],
+    )
+
+    doc.add_heading("7. 下一阶段计划", level=1)
+    add_para(
+        doc,
+        "下一阶段不应直接进入大规模刷分，而应先完成剩余数据源筛选，再选择一到两条最有希望的预训练路线做受控消融。建议顺序如下：",
     )
     add_numbered(
         doc,
         [
-            "统一 subject_id、label、fold、trial/image 边界等基础字段。",
-            "基于屏幕物理参数和观看距离完成坐标归一化和 DVA 转换。",
-            "构建 event table，保留 fixation 坐标、duration、saccade 转移距离、角度和速度等公共眼动事件特征。",
-            "构建 Macro-Behavior segment features，在固定窗口中统计 fixation duration、scanpath length、BCEA、空间覆盖率、transition velocity 和 entropy 等宏观行为指标。",
-            "构建 Event-Temporal sequence，将每个受试者的 fixation/saccade event 组织为事件序列，用于事件级动态建模。",
+            "接入 Saliency4ASD：确认文件结构，解析 fixation/scanpath，统一到 EyeNet fixation-event schema。ASD 标签只可作为辅助任务候选，不能与 EMS SZ/HC 混合。",
+            "核查 CRCNS eye-1：确认本地数据是否完整，再决定是否实现 adapter。",
+            "对每个新数据源只使用固定 baseline 超参数，不做调参，先跑 source+EMS MEM fine-tune/frozen。",
+            "完成数据源筛选后再做小范围消融：hidden_dim 32/64/128，dropout 0.1/0.3/0.5，max_seq_len 1000/1500/2500。",
+            "最终模型选择必须基于 multi-seed mean/std，而不是某一个 split 的最高 AUC。",
         ],
-    )
-    add_table(
-        doc,
-        ["处理产物", "文件", "用途"],
-        [
-            ["EMS event table", "data/processed/EMS/ems_events.csv", "统一 fixation/saccade 事件层数据"],
-            ["Macro features", "ems_segment_features_no_pupil.csv", "Macro-Behavior Stream 输入"],
-            ["Subject aggregate", "ems_subject_features_segment_agg_no_pupil.csv", "传统 ML baseline 输入"],
-            ["Event sequence", "ems_event_temporal_sequences_no_pupil.csv", "Event-Temporal Stream 输入"],
-            ["Fixed split", "ems_subject_split_60_20_20_seed42.csv", "主实验 train/valid/test 划分"],
-        ],
-        [1800, 3600, 3960],
     )
 
-    doc.add_heading("3. 当前模型设计", level=1)
-    add_para(
-        doc,
-        "当前模型从最初的 GCN + 微观时频设想调整为更适合小样本和跨数据集泛化的双流时序结构。Macro-Behavior Stream 使用窗口级统计序列，Event-Temporal Stream 使用 fixation/saccade 事件序列。两条流均采用 1-layer BiGRU + attention pooling，再在 subject-level 输出风险概率。",
-    )
-    add_table(
-        doc,
-        ["模型/分支", "输入", "结构", "当前作用"],
-        [
-            ["Traditional ML", "subject-level 聚合统计特征", "Logistic/SVM/RF/HistGB/MLP", "强 baseline，判断非深度方法上限"],
-            ["Macro-Behavior Stream", "100 个窗口级宏观行为特征序列，37 维特征", "Linear projection + 1-layer BiGRU + attention", "当前最稳定的深度学习主干"],
-            ["Event-Temporal Stream", "fixation/saccade 事件序列，22 维特征，最长 2020 events", "Linear projection + 1-layer BiGRU + attention", "捕捉更细粒度的事件动态，作为辅助流"],
-            ["Dual concat", "Macro embedding + Event embedding", "两个编码器后直接 concat，再 MLP 分类", "当前主双流候选，AUC 最优"],
-            ["Dual gated", "Macro embedding + Event embedding", "gate * Macro + (1-gate) * Event", "验证自适应融合，但出现 Macro 单流塌缩"],
-        ],
-        [1700, 3100, 2900, 1660],
-    )
-
-    doc.add_heading("4. 实验协议", level=1)
-    add_para(
-        doc,
-        "为避免官方 4-fold 在部分模型中造成概率尺度不一致和 fold 分布问题，当前主实验采用 subject-level 60/20/20 固定划分。训练集只用于模型拟合，验证集用于 early stopping、超参数选择和阈值选择，测试集只用于最终评估。所有主结果均报告 validation-selected best balanced accuracy threshold 下的 test 指标。",
-    )
-    add_table(
-        doc,
-        ["项目", "当前设置"],
-        [
-            ["数据划分", "subject-level 60/20/20，train 96，valid 32，test 32，HC/SZ 均衡"],
-            ["核心输入", "x/y/timestamp/validity/采样率/屏幕参数/观看距离推导出的公共眼动特征"],
-            ["不使用信息", "图片内容、视频语义、AOI、IMAGE 语义、任务答案、瞳孔核心特征"],
-            ["深度模型默认结构", "projection_dim=64，hidden_dim=64，attention_dim=64，dropout=0.3"],
-            ["优化器", "AdamW，learning_rate=1e-3，weight_decay=1e-4"],
-            ["训练控制", "max_epochs=100，patience=15，valid AUC early stopping"],
-            ["分类阈值", "在 validation set 选择，test set 只评估一次"],
-        ],
-        [2600, 6760],
-    )
-
-    doc.add_heading("5. 固定划分实验结果", level=1)
-    add_para(
-        doc,
-        "当前固定划分结果表明，传统 HistGradientBoosting 仍是强 baseline；Macro-Behavior Stream 与 Dual concat 在 AUC 上表现更好，但固定阈值下的 balanced accuracy 尚未全面超过 HistGradientBoosting。因此论文表述应保持克制：双流模型提升了风险排序能力，但分类阈值泛化仍需在更多数据集和更大样本中验证。",
-    )
-    add_table(
-        doc,
-        ["模型", "AUC", "Acc", "Bal Acc", "Sens", "Spec", "F1", "Confusion"],
-        metric_rows_for_doc(),
-        [1700, 780, 780, 850, 780, 780, 780, 2910],
-    )
+    doc.add_heading("8. 当前论文表述限制", level=1)
     add_bullets(
         doc,
         [
-            f"Dual concat 当前 AUC 最高：{metrics['dual_stream_concat']['auc']}，说明 Event-Temporal Stream 对 Macro 表征存在一定互补排序信息。",
-            f"Macro only AUC 为 {metrics['macro_behavior_stream']['auc']}，与 Dual concat 的固定阈值分类结果相同，说明 Macro 是当前最稳定主干。",
-            f"Event only AUC 为 {metrics['event_temporal_stream']['auc']}，sensitivity 为 {metrics['event_temporal_stream']['sensitivity']}，提示事件动态流更偏向发现阳性风险，但 specificity 较低。",
-            f"HistGradientBoosting balanced accuracy 为 {metrics['ml_hist_gradient_boosting']['balanced_accuracy']}，是目前固定阈值分类最强 baseline。",
+            "不能声称模型已经达到临床诊断水平；当前只支持初步筛查和风险排序表述。",
+            "不能声称公共数据必然提升；HBN 已经显示公共数据可能无增益。",
+            "不能只报告最高单 split；EMS 样本小，必须报告 multi-seed 统计。",
+            "不能混合不同疾病标签形成统一二分类标签。",
+            "不能把 task_id、video_id、image_id 或刺激语义作为 universal encoder 输入。",
         ],
-    )
-
-    doc.add_heading("6. 双流融合分析", level=1)
-    add_para(
-        doc,
-        "双流实验的关键问题是 Event-Temporal Stream 是否真的补充 Macro-Behavior Stream。concat fusion 相比 Macro only 将 test AUC 从 0.891 提升至 0.898，但固定阈值下 accuracy、balanced accuracy、sensitivity 和 specificity 与 Macro only 相同。gated fusion 原本用于验证自适应权重分配能否改善 sensitivity/specificity 平衡，但当前结果显示其泛化明显变差。",
-    )
-    gate_test = next(row for row in gate_rows if row["split"] == "test")
-    gate_valid = next(row for row in gate_rows if row["split"] == "valid")
-    add_table(
-        doc,
-        ["融合方式", "Test AUC", "Bal Acc", "Sensitivity", "Specificity", "结论"],
-        [
-            [
-                "Dual concat",
-                metrics["dual_stream_concat"]["auc"],
-                metrics["dual_stream_concat"]["balanced_accuracy"],
-                metrics["dual_stream_concat"]["sensitivity"],
-                metrics["dual_stream_concat"]["specificity"],
-                "AUC 最优，作为当前主双流模型",
-            ],
-            [
-                "Dual gated",
-                metrics["dual_stream_gated"]["auc"],
-                metrics["dual_stream_gated"]["balanced_accuracy"],
-                metrics["dual_stream_gated"]["sensitivity"],
-                metrics["dual_stream_gated"]["specificity"],
-                "出现单流塌缩，作为补充/负结果",
-            ],
-        ],
-        [1700, 900, 900, 1000, 1000, 3860],
-    )
-    add_para(
-        doc,
-        f"门控权重分析显示，gated fusion 在 test set 的 macro_gate 平均值为 {float(gate_test['macro_gate_mean']):.3f}，event_gate 平均值为 {float(gate_test['event_gate_mean']):.3f}；在 valid set 的 macro_gate 平均值为 {float(gate_valid['macro_gate_mean']):.3f}，event_gate 平均值为 {float(gate_valid['event_gate_mean']):.3f}。test set 中 93.75% 的受试者 macro_gate 超过 0.90，说明门控几乎完全压制 Event 流，没有形成真正的自适应双流融合。",
-    )
-
-    doc.add_heading("7. 阶段性结论", level=1)
-    add_numbered(
-        doc,
-        [
-            "内容解耦路线成立：当前所有主模型均不依赖图片或视频语义，只使用公共眼动行为特征。",
-            "Macro-Behavior Stream 是当前最稳定的深度学习主干，适合作为后续跨数据集预训练的核心 encoder。",
-            "Event-Temporal Stream 单独性能较弱，但对 Dual concat 的 AUC 有增益，说明其具有辅助价值。",
-            "Dual concat 是当前主双流方案；gated fusion 在当前小样本条件下出现单流塌缩，不作为最终主模型。",
-            "传统 ML baseline 仍然非常强，后续论文不能简单声称深度学习全面优于机器学习，而应强调序列建模、可解释性和跨数据集扩展潜力。",
-        ],
-    )
-
-    doc.add_heading("8. 下一阶段计划：跨数据集预训练", level=1)
-    add_para(
-        doc,
-        "下一阶段将从 EMS 单数据集实验转向跨数据集建模。计划优先接入 GazeBase、CRCNS eye-1、HBN、Saliency4ASD 等公开数据源，并根据各数据集是否包含疾病标签、年龄段、观看范式和原始采样质量，分别用于自监督预训练、正常人眼动动态建模、辅助表型学习或异常注意模式辅助任务。",
-    )
-    add_table(
-        doc,
-        ["数据集", "预期作用", "训练任务", "注意事项"],
-        [
-            ["GazeBase", "大规模正常人眼动 encoder 预训练", "自监督/对比学习/重建任务", "无精神疾病标签，不能直接作为 SZ 分类监督"],
-            ["CRCNS eye-1", "补充自然视频观看域", "视频观看下的眼动动态自监督", "需统一采样率、坐标、validity 和观看距离"],
-            ["HBN", "儿童/青少年自然视频眼动辅助学习", "自监督或表型辅助任务", "年龄段贴近应用，但标签体系复杂"],
-            ["Saliency4ASD", "异常视觉注意模式辅助任务", "ASD/TD 辅助分类或表征学习", "不能直接并入 SZ 标签，只能做辅助迁移"],
-        ],
-        [1500, 2700, 2600, 2560],
     )
 
     doc.add_heading("参考文献草稿", level=1)
-    references = [
-        "Song et al., 2024. EMS: A Large-Scale Eye Movement Dataset, Benchmark and New Model for Schizophrenia Recognition. IEEE Transactions on Neural Networks and Learning Systems.",
-        "Liu & Deubel, 2018. An elaborate algorithm for automatic processing of eye movement data and identifying fixations in eye-tracking experiments. Biomedical Engineering Online.",
-        "Niehorster et al., 2020. The accuracy and precision of position and velocity in eye tracking / preprocessing evaluation. Behavior Research Methods.",
-        "Holmqvist et al., 2011. Eye Tracking: A Comprehensive Guide to Methods and Measures. Oxford University Press.",
-        "Bengio, Courville & Vincent, 2013. Representation learning: A review and new perspectives. IEEE TPAMI.",
-        "Srivastava et al., 2014. Dropout: A simple way to prevent neural networks from overfitting. JMLR.",
-        "Kornblith et al., 2019. Do Better ImageNet Models Transfer Better? CVPR.",
-        "Wang et al., 2020. Graph Convolutional Networks for gaze relation learning / eye movement analysis. Pattern Recognition Letters.",
-        "Glaholt et al., 2019. Deep learning analysis of eye movement dynamics in schizophrenia. Schizophrenia Bulletin.",
-    ]
-    add_bullets(doc, references)
+    add_bullets(
+        doc,
+        [
+            "Song et al., 2024. EMS: A Large-Scale Eye Movement Dataset, Benchmark and New Model for Schizophrenia Recognition. IEEE Transactions on Neural Networks and Learning Systems.",
+            "Holmqvist et al., 2011. Eye Tracking: A Comprehensive Guide to Methods and Measures. Oxford University Press.",
+            "Liu & Deubel, 2018. An elaborate algorithm for automatic processing of eye movement data and identifying fixations in eye-tracking experiments. Biomedical Engineering Online.",
+            "Bengio, Courville & Vincent, 2013. Representation learning: A review and new perspectives. IEEE TPAMI.",
+            "Srivastava et al., 2014. Dropout: A simple way to prevent neural networks from overfitting. JMLR.",
+            "Kornblith et al., 2019. Do Better ImageNet Models Transfer Better? CVPR.",
+        ],
+    )
 
     doc.save(OUTPUT)
 

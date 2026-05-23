@@ -35,13 +35,30 @@ Implemented:
 - Masked-event self-supervised pretraining smoke test.
 - Supervised encoder downstream transfer smoke test.
 - Dataset configs and acquisition notes for EMS, GazeBase, HBN, CRCNS eye-1, and Saliency4ASD.
+- HBN and GazeBase raw-gaze adapters into the shared fixation-event schema.
+- EMS-only, HBN+EMS, and GazeBase+EMS masked-event pretraining comparisons.
 
 Current conclusion:
 
 - EMS fixed-split supervised modeling is functional.
-- Dual-stream concat is the current main EMS supervised result.
-- Masked-event encoder pretraining works technically and can be transferred into downstream classification.
-- The next engineering step is external dataset adapter development, starting with HBN.
+- EMS-only masked-event pretraining followed by supervised fine-tuning is the current strongest encoder route by multi-seed EMS evidence.
+- HBN and GazeBase are integrated as public self-supervised pretraining sources; GazeBase shows a more conservative high-specificity operating point on the current fixed split.
+- The next engineering step is screening the remaining public datasets before broad model/hyperparameter ablation.
+
+See `docs/current_experiment_summary.md` for the current experiment table and next experimental order.
+
+## Environment Setup
+
+Use the project as an editable package:
+
+```powershell
+conda activate eyenet
+cd D:\CodeProjects\Python\eyenet
+python -m pip install -e .
+python -c "import eyenet; print(eyenet.__file__)"
+```
+
+Scripts should then run directly with `python scripts/<name>.py` without setting `PYTHONPATH`.
 
 ## Repository Layout
 
@@ -105,17 +122,18 @@ Update an existing environment:
 conda env update -n eyenet -f environment.yml --prune
 ```
 
-Set local imports before running scripts:
+Install the package in editable mode before running scripts:
 
 ```powershell
 cd D:\CodeProjects\Python\eyenet
-$env:PYTHONPATH="D:\CodeProjects\Python\eyenet\src"
+python -m pip install -e .
+python -c "import eyenet; print(eyenet.__file__)"
 ```
 
 For one-off execution without activating the shell:
 
 ```powershell
-conda run -n eyenet cmd /S /C "set PYTHONPATH=D:\CodeProjects\Python\eyenet\src&& python <script>"
+conda run -n eyenet python <script>
 ```
 
 ## Active Raw Data Status
@@ -136,8 +154,8 @@ Current local state at the last handoff:
 EMS           present
 GazeBase      GazeBase_v2_0.zip present
 HBN           data.zip present
-CRCNS_eye1    empty
-Saliency4ASD  empty
+CRCNS_eye1    empty or pending local verification
+Saliency4ASD  downloaded/extracted locally
 ```
 
 Raw files are intentionally ignored by Git.
@@ -211,16 +229,16 @@ Recommended reading order:
 
 ## Next Engineering Step
 
-Implement the HBN adapter:
+Screen the remaining public datasets before broad model and hyperparameter ablation:
 
 ```text
-data/raw/HBN/data.zip
-  -> inspect raw CSV structure
-  -> convert raw gaze samples to shared EyeNet event schema
+data/raw/Saliency4ASD/
+  -> inspect fixation/raw table structure and metadata
+  -> convert usable eye-movement records to shared EyeNet event schema
   -> validate schema
   -> subject-level QC
   -> encoder-ready no-position table
   -> masked-event modeling smoke test
 ```
 
-GazeBase should follow after HBN because it is larger and internally nested by round, subject, and task.
+CRCNS eye-1 should follow after local-file availability is verified.

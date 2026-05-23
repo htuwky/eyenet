@@ -1,6 +1,6 @@
 # Data Dictionary
 
-This document defines the shared EyeNet event-level schema. All datasets must be converted into this format before encoder pretraining or downstream model training.
+This document defines the shared EyeNet fixation-event schema. All datasets must be converted into this format before universal encoder pretraining or downstream model training. Datasets with raw gaze samples must first run fixation detection; raw gaze samples are not the primary encoder input.
 
 ## Required Event Columns
 
@@ -11,10 +11,10 @@ This document defines the shared EyeNet event-level schema. All datasets must be
 | `label` | Dataset-specific target label. May be unavailable or auxiliary for self-supervised datasets. | No for pretraining; yes only for supervised heads |
 | `trial_id` | Stimulus, video clip, task block, or artificial window boundary. | No |
 | `event_index` | Event order within a trial/window. | Optional derived position feature only |
-| `event_type` | Event type, currently usually `fixation`; later may include `saccade`. | Yes if encoded categorically |
+| `event_type` | Event type. The universal encoder currently expects `fixation`. | No |
 | `x_norm` | Horizontal position normalized to `[0, 1]`. | Yes |
 | `y_norm` | Vertical position normalized to `[0, 1]`. | Yes |
-| `duration_ms` | Event duration in milliseconds. | Yes |
+| `duration_ms` | Fixation duration in milliseconds. For raw-gaze datasets this is produced by fixation detection; it is not the raw sample interval. | Yes |
 
 ## Recommended Event Columns
 
@@ -50,6 +50,7 @@ This document defines the shared EyeNet event-level schema. All datasets must be
 ## Modeling Rules
 
 - Image names, video names, clip ids, and task blocks are segmentation boundaries only.
+- Raw gaze is an adapter input only. The universal encoder operates on fixation events.
 - Image/video pixels or semantic content are not model inputs.
 - Pupil features are optional and must not be required by the core model.
 - DVA features are preferred when hardware metadata is available, but the encoder must be able to run without them.

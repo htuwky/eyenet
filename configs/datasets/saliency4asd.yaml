@@ -3,7 +3,7 @@ dataset:
   name: Saliency4ASD
   root: data/raw/Saliency4ASD
   processed_dir: data/processed/Saliency4ASD
-  local_status: pending_download
+  local_status: downloaded_unpacked_pending_adapter
   primary_role: auxiliary_atypical_visual_attention_task
 
 labels:

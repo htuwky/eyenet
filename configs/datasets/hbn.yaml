@@ -3,7 +3,7 @@ dataset:
   name: Healthy Brain Network
   root: data/raw/HBN
   processed_dir: data/processed/HBN
-  local_status: pending_access
+  local_status: available_extracted
   primary_role: youth_domain_self_supervised_or_auxiliary_phenotype_learning
 
 labels:
@@ -13,13 +13,14 @@ labels:
   caution: labels_and_age_distribution_must_be_reviewed_before_supervised_use
 
 stimulus:
-  task_type: naturalistic_or_task_based_eye_tracking
-  stimulus_type: mixed
-  sampling_rate_hz: null
-  screen_width_px: null
-  screen_height_px: null
-  screen_diagonal_in: null
-  viewing_distance_cm: null
+  task_type: naturalistic_video_viewing
+  stimulus_type: mixed_video_clips
+  sampling_rate_hz: 120
+  screen_width_px: 800
+  screen_height_px: 600
+  screen_width_cm: 33.8
+  screen_height_cm: 27.0
+  viewing_distance_cm: 63.5
   content_visible_to_model: false
 
 features:
@@ -33,4 +34,7 @@ pretraining:
   recommended_tasks: [masked_event_modeling, segment_contrastive_learning, youth_domain_adaptation]
 
 schema:
-  event_table: data/processed/HBN/hbn_events.csv
+  raw_gaze_dir: data/raw/HBN/downloads/data
+  event_table: data/processed/HBN/hbn_fixation_events.csv
+  adapter: raw_gaze_to_fixation_events
+  detector: I-DT
