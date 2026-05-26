@@ -1,14 +1,14 @@
 # Current Experiment Summary
 
-Last updated: 2026-05-23
+Last updated: 2026-05-25
 
-This document summarizes the current EyeNet encoder-pretraining state before moving into additional public datasets and model ablation.
+This document summarizes the current EyeNet encoder-pretraining state after dataset screening, numerical-stability fixes, and the first controlled aligned multi-seed model-selection run.
 
 ## Core Decision
 
-The project uses fixation-event sequences as the universal input. Raw gaze datasets are adapter inputs only and must be converted to fixation events before encoder training.
+EyeNet uses fixation-event sequences as the universal model input. Raw gaze datasets are adapter inputs only and must be converted to fixation events before encoder training.
 
-The current universal encoder feature schema is:
+The active universal encoder feature schema is:
 
 ```text
 encoder_no_position_core
@@ -33,48 +33,40 @@ is_last_event_in_segment
 event_index_in_segment_norm
 ```
 
-No image, video, task-name, stimulus-category, or content-derived feature is used as an encoder feature.
+No image, video, task-name, stimulus-category, AOI, or content-derived feature is used as an encoder feature.
 
 ## Dataset Processing Status
 
 | Dataset | Status | Subjects | Fixation Events | Notes |
 | --- | --- | ---: | ---: | --- |
 | EMS | Complete | 160 | 225,159 | Main SZ/HC downstream benchmark. Uses clipped-QC no-position encoder table. |
-| HBN | Complete | 1,244 usable after QC | 1,684,382 after QC | Raw gaze converted with I-DT. Used for public unlabeled MEM pretraining. |
-| GazeBase | Complete | 322 | 843,517 | Raw DVA gaze converted with I-DT. Current adapter uses video tasks `VD1,VD2`. |
-| Saliency4ASD | Pending | TBD | TBD | Available locally, not converted yet. Labels must not be merged with EMS SZ/HC. |
-| CRCNS eye-1 | Pending | TBD | TBD | Local status still needs verification before adapter work. |
+| HBN | Complete | 1,244 usable after QC | 1,684,382 after QC | Public unlabeled MEM source. Technically integrated; not currently the best transfer source. |
+| GazeBase | Complete | 322 | 843,517 | Video tasks `VD1,VD2`; high-specificity single-split behavior. |
+| OneStop | Complete | 360 | 2,042,834 | Reading fixation corpus; technically integrated, but less promising for EMS transfer than CRCNS in current runs. |
+| CRCNS eye-1 | Complete | 16 | 67,172 | Natural movie-viewing fixations; currently the most useful public source for EMS transfer experiments. |
+| Saliency4ASD | Deferred | TBD | TBD | Pseudo-subject/session structure and ASD labels make it lower priority. Do not merge ASD labels with SZ/HC. |
 
-## GazeBase Adapter Result
+## Protocol Correction
 
-GazeBase full conversion:
+The project now distinguishes exploratory mixed pretraining from strict model-selection pretraining.
 
-```text
-n_subject_zips: 881
-n_subjects: 322
-n_trials: 3524
-n_fixation_events: 843517
-tasks: VD1, VD2
-valid_sample_rate_mean: 0.955
-fixation_duration_median_ms: 155
-```
+For final model selection, the self-supervised mixed pretraining split is **aligned to the EMS downstream split**. EMS subjects assigned to downstream test are also assigned to MEM test, so they are not seen during MEM train. Non-EMS datasets are split independently by subject.
 
-GazeBase schema validation:
+Active aligned split generator:
 
 ```text
-passed: true
-normalized_coordinate_issues: none
-structural_errors: none
+scripts/create_aligned_self_supervised_subject_split.py
 ```
 
-GazeBase QC:
+Active aligned multi-seed runner:
 
 ```text
-n_hard_qc_pass: 322 / 322
-n_usable_for_self_supervised_pretraining: 322 / 322
+scripts/run_aligned_encoder_multiseed_ablation.py
 ```
 
-## Multi-Seed EMS Encoder Baseline
+This means older non-aligned mixed-pretraining runs are retained as exploratory evidence but should not be used as final model-selection results.
+
+## Multi-Seed EMS Baseline
 
 Five EMS stratified subject splits were run for:
 
@@ -93,37 +85,36 @@ Primary threshold: validation-selected best balanced accuracy.
 Interpretation:
 
 - EMS-only masked event modeling improves mean AUC and balanced accuracy after supervised fine-tuning.
-- Frozen linear probing underperforms from-scratch training, so MEM is useful mainly as initialization for task-specific fine-tuning.
+- Frozen probing underperforms from-scratch training, so MEM is useful mainly as initialization for task-specific fine-tuning.
 - EMS remains small; results should be reported as initial evidence, not clinical performance.
 
-## Public Dataset Pretraining Results
+## Public Dataset Single-Split Screening
 
-Single fixed EMS split `seed42` downstream comparison:
+Single split screening showed that public data is not automatically helpful.
 
 | Pretraining Source | Fine-Tune? | Test AUC | Balanced Accuracy | Sensitivity | Specificity | Notes |
 | --- | --- | ---: | ---: | ---: | ---: | --- |
-| none | supervised from scratch | 0.828 | 0.719 | 0.813 | 0.625 | Baseline encoder. |
-| EMS-only MEM | yes | 0.891 | 0.750 | 0.938 | 0.563 | Highest single-split AUC so far. |
-| EMS-only MEM | frozen | 0.848 | 0.688 | 0.938 | 0.438 | Encoder alone is not enough. |
-| HBN+EMS MEM | yes | 0.859 | 0.719 | 0.875 | 0.563 | Did not outperform EMS-only. |
-| HBN+EMS MEM | frozen | 0.824 | 0.719 | 0.938 | 0.500 | Some transfer, weak specificity. |
-| GazeBase+EMS MEM | yes | 0.863 | 0.813 | 0.750 | 0.875 | More conservative, high specificity. |
-| GazeBase+EMS MEM | frozen | 0.863 | 0.688 | 0.938 | 0.438 | Ranking transfers, threshold boundary needs fine-tuning. |
+| none | supervised from scratch | 0.828 | 0.719 | 0.813 | 0.625 | Seed42 supervised encoder baseline. |
+| EMS-only MEM | yes | 0.891 | 0.750 | 0.938 | 0.563 | Strong EMS-only initialization. |
+| HBN+EMS MEM | yes | 0.859 | 0.719 | 0.875 | 0.563 | Technically works, but no gain over EMS-only. |
+| GazeBase+EMS MEM | yes | 0.863 | 0.813 | 0.750 | 0.875 | More conservative high-specificity operating point. |
+| OneStop+EMS MEM | yes | 0.891 | 0.719 | 0.938 | 0.500 | Good AUC, weak specificity under selected threshold. |
+| CRCNS eye-1+EMS MEM | yes | 0.910 | 0.781 | 0.750 | 0.813 | Best single-source public AUC candidate. |
+| GazeBase+CRCNS+EMS MEM | yes | 0.898 | 0.781 | 0.938 | 0.625 | Fusion did not clearly beat CRCNS-only. |
 
 Interpretation:
 
-- EMS-only MEM is the current best AUC route.
-- GazeBase+EMS is not higher AUC than EMS-only on seed42, but it improves specificity and balanced accuracy on that split.
-- HBN is technically integrated but is not currently the best pretraining source.
-- Public data is not assumed useful by default; each source must improve EMS downstream or provide a clear complementary operating point.
+- CRCNS eye-1 is currently the most promising public source because it matches the natural viewing/video-like setting better than reading or HBN.
+- GazeBase remains useful as a high-specificity reference source.
+- HBN and OneStop are technically integrated but not current priority pretraining sources.
 
 ## Current Model
 
-Current encoder:
+Primary encoder:
 
 ```text
 input: [batch, sequence_length, 13]
-projection: Linear(13 -> 64) + LayerNorm + ReLU + Dropout(0.3)
+projection: Linear(13 -> 64) + LayerNorm + ReLU + Dropout
 temporal encoder: 1-layer bidirectional GRU, hidden_dim=64
 event embedding: 128
 pooling: masked attention pooling
@@ -131,7 +122,13 @@ classifier: supervised binary head
 MEM head: reconstruct masked 13-dim event features
 ```
 
-Current training defaults:
+Numerical-stability fixes already applied:
+
+- MEM masking uses a learnable mask token instead of replacing masked values with `0.0`.
+- MEM reconstruction operates in the dataloader-standardized feature space, avoiding raw scale domination.
+- YAML config loading now uses `pyyaml` rather than a local partial parser.
+
+Current fixed training protocol:
 
 ```text
 optimizer: AdamW
@@ -139,41 +136,56 @@ learning_rate: 1e-3
 weight_decay: 1e-4
 batch_size: 8
 max_seq_len: 1500
-dropout: 0.3
 gradient_clip_norm: 5.0
-mask_probability: 0.30
 mask_strategy: span
 mask_span_events: 2-8
 ```
 
-These are baseline settings, not final optimized hyperparameters.
+## Aligned Model-Selection Result
 
-## Next Experimental Order
+Strict aligned protocol:
 
-Do not start broad hyperparameter search yet. The correct order is:
+```text
+pretraining data: EMS + CRCNS eye-1
+anchor dataset: EMS
+seeds: 0,1,2,3,4
+batch_size: 8
+max_seq_len: 1500
+encoder: BiGRU64 attention
+mask_probability: 0.45
+compared dropout: 0.3 vs 0.4
+downstream mode: supervised fine-tuning
+```
 
-1. Finish remaining dataset source screening:
-   - Saliency4ASD
-   - CRCNS eye-1, if local raw files are available
-2. Run each new source through the fixed baseline configuration:
-   - adapter
-   - schema validation
-   - QC
-   - encoder-ready table
-   - source+EMS MEM
-   - EMS downstream fine-tune/frozen
-3. Select one or two promising pretraining routes.
-4. Run controlled ablations:
-   - hidden_dim: 32 / 64 / 128
-   - dropout: 0.1 / 0.3 / 0.5
-   - max_seq_len: 1000 / 1500 / 2500
-   - optional later: GRU depth and Transformer encoder
-5. Report model selection by multi-seed mean/std, not by one best split.
+Primary threshold: validation-selected best balanced accuracy.
+
+| Experiment | Mode | Seeds | AUC Mean | AUC Std | Balanced Accuracy Mean | Balanced Accuracy Std | Sensitivity Mean | Specificity Mean | Interpretation |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| CRCNS+EMS MEM, dropout 0.3 | fine-tune | 0-4 | 0.813 | 0.062 | 0.725 | 0.060 | 0.788 | 0.663 | Current primary model. Best overall AUC/BA balance. |
+| CRCNS+EMS MEM, dropout 0.4 | fine-tune | 0-4 | 0.804 | 0.043 | 0.719 | 0.049 | 0.713 | 0.725 | More conservative; higher specificity, lower sensitivity. |
+| CRCNS+EMS MEM, dropout 0.3 | frozen | 0-4 | 0.719 | 0.072 | 0.613 | 0.098 | 0.813 | 0.413 | Frozen probing is not competitive. |
+| CRCNS+EMS MEM, dropout 0.4 | frozen | 0-4 | 0.709 | 0.067 | 0.631 | 0.060 | 0.763 | 0.500 | Frozen probing remains weak. |
+
+Decision:
+
+- Use `bigru64_ems_crcns_mask045_aligned` as the current primary model.
+- Keep `bigru64_ems_crcns_mask045_dropout04_aligned` as a high-specificity secondary candidate.
+- Do not use frozen encoder as the main downstream method.
+- Do not include single-seed `mask0.30` or `batch16` runs in final comparisons.
 
 ## Current Best Statement
 
 The defensible current statement is:
 
 ```text
-Across five EMS stratified subject splits, EMS-only masked event modeling followed by supervised fine-tuning improved downstream SZ/HC classification over from-scratch encoder training. Public datasets HBN and GazeBase have been integrated into the same fixation-event pipeline; initial single-split results suggest GazeBase may provide a more conservative high-specificity operating point, while HBN did not improve over EMS-only MEM.
+Across five EMS stratified subject splits, EMS-only masked event modeling followed by supervised fine-tuning improves downstream SZ/HC classification over from-scratch encoder training. After public dataset screening and strict EMS-anchor split alignment, CRCNS eye-1 plus EMS pretraining with a BiGRU64 encoder, span masking at probability 0.45, dropout 0.3, and supervised fine-tuning is the current primary model-selection result. The improvement over EMS-only is not yet decisive, but CRCNS provides the best public-data transfer route tested so far. Frozen encoder probing is consistently weaker than fine-tuning.
 ```
+
+## Next Experimental Order
+
+1. Stop broad architecture search for now.
+2. Compare the aligned CRCNS result directly against EMS-only MEM and from-scratch in one paper table.
+3. Update paper draft and project handoff docs with the aligned protocol.
+4. Run one final confirmation only if needed:
+   - `max_seq_len=3000` for the primary dropout 0.3 model, because 16GB GPU memory can be used there without changing batch size in the main protocol.
+5. Move next to engineering cleanup or the next carefully selected public dataset only after the current model-selection result is documented.

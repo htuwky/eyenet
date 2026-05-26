@@ -14,22 +14,25 @@ def load_events(path: str | Path, train_valid_only: bool = True) -> pd.DataFrame
     return events
 
 
-def extract_subject_features(events: pd.DataFrame, include_pupil: bool = False) -> pd.DataFrame:
+def extract_subject_features(events: pd.DataFrame) -> pd.DataFrame:
     rows: list[dict] = []
     for subject_id, subject_events in events.groupby("subject_id", sort=True):
-        label = subject_events["label"].dropna().iloc[0]
+        labels = subject_events["label"].dropna()
+        if labels.empty:
+            raise ValueError(f"Subject {subject_id} has no non-missing label for subject feature extraction.")
+        label = labels.iloc[0]
         fold = subject_events["fold"].iloc[0]
         row = {
             "subject_id": subject_id,
             "fold": fold,
             "label": int(label),
         }
-        row.update(extract_one_subject(subject_events, include_pupil=include_pupil))
+        row.update(extract_one_subject(subject_events))
         rows.append(row)
     return pd.DataFrame(rows).sort_values("subject_id").reset_index(drop=True)
 
 
-def extract_one_subject(df: pd.DataFrame, include_pupil: bool = False) -> dict:
+def extract_one_subject(df: pd.DataFrame) -> dict:
     transition_df = df[df["saccade_amplitude_norm"].notna()].copy()
     features: dict[str, float] = {}
 
@@ -66,9 +69,6 @@ def extract_one_subject(df: pd.DataFrame, include_pupil: bool = False) -> dict:
     features["long_fixation_ratio_gt500ms"] = float((df["duration_ms"] > 500).mean())
     features["large_saccade_ratio_norm_gt025"] = float((transition_df["saccade_amplitude_norm"] > 0.25).mean())
 
-    if include_pupil:
-        add_descriptive(features, "pupil", df["pupil_optional"])
-
     return features
 
 
@@ -87,6 +87,8 @@ def add_descriptive(features: dict[str, float], prefix: str, series: pd.Series) 
 
 
 def bcea(x: pd.Series, y: pd.Series, probability: float = 0.6827) -> float:
+    if not 0.0 < probability < 1.0:
+        raise ValueError(f"BCEA probability must be in (0, 1), got {probability}.")
     x_clean = pd.to_numeric(x, errors="coerce")
     y_clean = pd.to_numeric(y, errors="coerce")
     valid = x_clean.notna() & y_clean.notna()
@@ -96,6 +98,8 @@ def bcea(x: pd.Series, y: pd.Series, probability: float = 0.6827) -> float:
         return np.nan
     sx = np.std(x_arr, ddof=1)
     sy = np.std(y_arr, ddof=1)
+    if sx == 0.0 or sy == 0.0:
+        return 0.0
     rho = np.corrcoef(x_arr, y_arr)[0, 1]
     rho = 0.0 if not np.isfinite(rho) else rho
     k = -math.log(1.0 - probability)

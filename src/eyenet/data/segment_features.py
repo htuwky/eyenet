@@ -92,7 +92,10 @@ def aggregate_segment_features(segments: pd.DataFrame, feature_cols: list[str] |
     train_valid_segments = segments[segments["split"] == "train_valid"].copy()
 
     for subject_id, subject_segments in train_valid_segments.groupby("subject_id", sort=True):
-        label = subject_segments["label"].dropna().iloc[0]
+        labels = subject_segments["label"].dropna()
+        if labels.empty:
+            raise ValueError(f"Subject {subject_id} has no non-missing label for segment aggregation.")
+        label = labels.iloc[0]
         fold = subject_segments["fold"].iloc[0]
         row = {
             "subject_id": subject_id,

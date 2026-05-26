@@ -26,9 +26,13 @@ class SupervisedEncoderConfig:
     patience: int = 10
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4
+    encoder_type: str = "bigru_attention"
     projection_dim: int = 64
     hidden_dim: int = 64
     attention_dim: int = 64
+    num_layers: int = 1
+    num_heads: int = 4
+    feedforward_dim: int = 256
     dropout: float = 0.3
     random_seed: int = 42
     pos_weight: float = 1.5
@@ -57,11 +61,16 @@ def train_supervised_encoder(
         max_seq_len=cfg.max_seq_len,
         balanced_train_sampler=cfg.balanced_train_sampler,
     )
+    cfg = cfg_with_pretrained_architecture(cfg, device=device) if cfg.pretrained_checkpoint is not None else cfg
     model = SupervisedEncoderClassifier(
         input_dim=len(feature_columns),
+        encoder_type=cfg.encoder_type,
         projection_dim=cfg.projection_dim,
         hidden_dim=cfg.hidden_dim,
         attention_dim=cfg.attention_dim,
+        num_layers=cfg.num_layers,
+        num_heads=cfg.num_heads,
+        feedforward_dim=cfg.feedforward_dim,
         dropout=cfg.dropout,
     ).to(device)
     pretrained_loaded = False
@@ -103,6 +112,11 @@ def train_supervised_encoder(
                 "valid_auc": float(valid_auc),
             }
         )
+        print(
+            f"[supervised] epoch {epoch:03d}/{cfg.max_epochs:03d} "
+            f"train_loss={train_loss:.6f} valid_loss={valid_loss:.6f} valid_auc={valid_auc:.6f}",
+            flush=True,
+        )
         if valid_auc > best_auc:
             best_auc = valid_auc
             best_state = copy.deepcopy(model.state_dict())
@@ -135,7 +149,15 @@ def train_supervised_encoder(
     valid_loss, valid_true, valid_prob, valid_subjects = evaluate(model, loaders["valid"], criterion, device)
     test_loss, test_true, test_prob, test_subjects = evaluate(model, loaders["test"], criterion, device)
 
-    valid_predictions_default = make_prediction_frame("valid", valid_subjects, valid_true, valid_prob, threshold=0.5)
+    model_name = f"supervised_{cfg.encoder_type}_encoder"
+    valid_predictions_default = make_prediction_frame(
+        model_name,
+        "valid",
+        valid_subjects,
+        valid_true,
+        valid_prob,
+        threshold=0.5,
+    )
     valid_threshold_metrics = analyze_thresholds(valid_predictions_default)
     selected_thresholds = choose_thresholds(valid_threshold_metrics)
     threshold_map = build_threshold_map(selected_thresholds)
@@ -147,7 +169,7 @@ def train_supervised_encoder(
         ("test", test_true, test_prob, test_subjects, test_loss),
     ]:
         for threshold_name, threshold in threshold_map.items():
-            frame = make_prediction_frame(split_name, subject_ids, labels, probabilities, threshold=threshold)
+            frame = make_prediction_frame(model_name, split_name, subject_ids, labels, probabilities, threshold=threshold)
             frame["threshold_name"] = threshold_name
             frame["threshold"] = threshold
             prediction_rows.extend(frame.to_dict(orient="records"))
@@ -158,7 +180,7 @@ def train_supervised_encoder(
             )
             metric_rows.append(
                 {
-                    "model": "supervised_bigru_attention_encoder",
+                    "model": model_name,
                     "split": split_name,
                     "threshold_name": threshold_name,
                     "threshold": threshold,
@@ -261,7 +283,24 @@ def load_pretrained_encoder(
     model.encoder.load_state_dict(encoder_state, strict=True)
 
 
+def cfg_with_pretrained_architecture(cfg: SupervisedEncoderConfig, device: str) -> SupervisedEncoderConfig:
+    checkpoint = torch.load(cfg.pretrained_checkpoint, map_location=device)
+    checkpoint_cfg = checkpoint.get("config") or {}
+    updates = {
+        "encoder_type": checkpoint_cfg.get("encoder_type", "bigru_attention"),
+        "projection_dim": checkpoint_cfg.get("projection_dim", cfg.projection_dim),
+        "hidden_dim": checkpoint_cfg.get("hidden_dim", cfg.hidden_dim),
+        "attention_dim": checkpoint_cfg.get("attention_dim", cfg.attention_dim),
+        "num_layers": checkpoint_cfg.get("num_layers", 1),
+        "num_heads": checkpoint_cfg.get("num_heads", cfg.num_heads),
+        "feedforward_dim": checkpoint_cfg.get("feedforward_dim", cfg.feedforward_dim),
+        "dropout": checkpoint_cfg.get("dropout", cfg.dropout),
+    }
+    return SupervisedEncoderConfig(**{**asdict(cfg), **updates})
+
+
 def make_prediction_frame(
+    model_name: str,
     split_name: str,
     subject_ids: list[str],
     labels: list[int],
@@ -271,7 +310,7 @@ def make_prediction_frame(
     probabilities_array = np.asarray(probabilities, dtype=float)
     return pd.DataFrame(
         {
-            "model": "supervised_bigru_attention_encoder",
+            "model": model_name,
             "split": split_name,
             "subject_id": subject_ids,
             "label": np.asarray(labels, dtype=int),

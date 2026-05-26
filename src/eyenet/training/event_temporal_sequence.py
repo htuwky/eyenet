@@ -146,7 +146,10 @@ def build_subject_event_sequences(events: pd.DataFrame, feature_cols: list[str],
         values = group[feature_cols].to_numpy(dtype=np.float32)
         raw_event_indices = group["subject_event_index"].to_numpy(dtype=np.int64)
         raw_segment_indices = group["segment_index"].to_numpy(dtype=np.int64)
-        label = int(group["label"].dropna().iloc[0])
+        label_values = group["label"].dropna()
+        if label_values.empty:
+            raise ValueError(f"Subject {subject_id} has no non-missing label for event sequence training.")
+        label = int(label_values.iloc[0])
         n_events = min(len(values), max_events)
 
         padded = np.zeros((max_events, len(feature_cols)), dtype=np.float32)

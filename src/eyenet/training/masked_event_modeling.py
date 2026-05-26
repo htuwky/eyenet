@@ -23,9 +23,13 @@ class MaskedEventModelingConfig:
     patience: int = 10
     learning_rate: float = 1e-3
     weight_decay: float = 1e-4
+    encoder_type: str = "bigru_attention"
     projection_dim: int = 64
     hidden_dim: int = 64
     attention_dim: int = 64
+    num_layers: int = 1
+    num_heads: int = 4
+    feedforward_dim: int = 256
     dropout: float = 0.3
     random_seed: int = 42
     max_seq_len: int | None = None
@@ -59,9 +63,13 @@ def train_masked_event_model(
     )
     model = MaskedEventModel(
         input_dim=len(feature_columns),
+        encoder_type=cfg.encoder_type,
         projection_dim=cfg.projection_dim,
         hidden_dim=cfg.hidden_dim,
         attention_dim=cfg.attention_dim,
+        num_layers=cfg.num_layers,
+        num_heads=cfg.num_heads,
+        feedforward_dim=cfg.feedforward_dim,
         dropout=cfg.dropout,
     ).to(device)
     optimizer = torch.optim.AdamW(model.parameters(), lr=cfg.learning_rate, weight_decay=cfg.weight_decay)
@@ -99,6 +107,12 @@ def train_masked_event_model(
                 "train_mask_rate": train_mask_rate,
                 "valid_mask_rate": valid_mask_rate,
             }
+        )
+        print(
+            f"[mem] epoch {epoch:03d}/{cfg.max_epochs:03d} "
+            f"train_loss={train_loss:.6f} valid_loss={valid_loss:.6f} "
+            f"train_mask={train_mask_rate:.4f} valid_mask={valid_mask_rate:.4f}",
+            flush=True,
         )
         if valid_loss < best_valid_loss:
             best_valid_loss = valid_loss
@@ -175,6 +189,7 @@ def run_epoch(
             mask_strategy=cfg.mask_strategy,
             min_mask_span_events=cfg.min_mask_span_events,
             max_mask_span_events=cfg.max_mask_span_events,
+            mask_token=model.mask_token,
         )
         if training:
             optimizer.zero_grad()
@@ -198,6 +213,7 @@ def apply_event_mask(
     mask_strategy: str = "span",
     min_mask_span_events: int = 2,
     max_mask_span_events: int = 8,
+    mask_token: torch.Tensor | None = None,
 ) -> tuple[torch.Tensor, torch.Tensor]:
     if mask_strategy == "random":
         random_values = torch.rand(valid_mask.shape, device=x.device)
@@ -215,7 +231,9 @@ def apply_event_mask(
 
     ensure_minimum_masked_events(reconstruction_mask, valid_mask, min_masked_events)
     input_x = x.clone()
-    input_x[reconstruction_mask] = 0.0
+    if mask_token is None:
+        raise ValueError("mask_token is required for masked event modeling.")
+    input_x[reconstruction_mask] = mask_token.to(device=x.device, dtype=x.dtype)
     return input_x, reconstruction_mask
 
 
@@ -308,6 +326,7 @@ def save_checkpoint(
             "preprocessor_path": "preprocessor.joblib",
             "device": device,
             "model_type": "masked_event_model",
+            "masking": "learnable_mask_token",
         },
         checkpoint_path / "best.pt",
     )

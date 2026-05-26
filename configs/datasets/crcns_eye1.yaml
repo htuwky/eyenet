@@ -3,7 +3,7 @@ dataset:
   name: CRCNS eye-1
   root: data/raw/CRCNS_eye1
   processed_dir: data/processed/CRCNS_eye1
-  local_status: pending_download
+  local_status: available_downloaded_zips
   primary_role: video_domain_self_supervised_pretraining
 
 labels:
@@ -14,11 +14,11 @@ labels:
 stimulus:
   task_type: natural_video_viewing
   stimulus_type: video
-  sampling_rate_hz: null
-  screen_width_px: null
-  screen_height_px: null
+  sampling_rate_hz: 240
+  screen_width_px: 640
+  screen_height_px: 480
   screen_diagonal_in: null
-  viewing_distance_cm: null
+  viewing_distance_cm: 80
   content_visible_to_model: false
 
 features:
@@ -32,4 +32,6 @@ pretraining:
   recommended_tasks: [masked_event_modeling, temporal_order_prediction, video_domain_alignment]
 
 schema:
-  event_table: data/processed/CRCNS_eye1/crcns_eye1_events.csv
+  event_table: data/processed/CRCNS_eye1/crcns_eye1_fixation_events.csv
+  adapter: raw_gaze_zip_to_fixation_events
+  encoder_ready_table: data/processed/CRCNS_eye1/encoder_ready/no_position/crcns_eye1_encoder_events.csv

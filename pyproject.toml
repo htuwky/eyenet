@@ -18,11 +18,15 @@ dependencies = [
   "openpyxl",
   "h5py",
   "pyarrow",
+  "networkx",
   "tqdm",
   "matplotlib",
   "seaborn",
+  "lightgbm",
+  "shap",
   "pymovements",
   "python-docx",
+  "mne",
 ]
 
 [tool.setuptools.packages.find]

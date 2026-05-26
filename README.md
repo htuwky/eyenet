@@ -41,11 +41,13 @@ Implemented:
 Current conclusion:
 
 - EMS fixed-split supervised modeling is functional.
-- EMS-only masked-event pretraining followed by supervised fine-tuning is the current strongest encoder route by multi-seed EMS evidence.
-- HBN and GazeBase are integrated as public self-supervised pretraining sources; GazeBase shows a more conservative high-specificity operating point on the current fixed split.
-- The next engineering step is screening the remaining public datasets before broad model/hyperparameter ablation.
+- Multi-seed masked-event pretraining plus supervised fine-tuning is the current encoder-selection path.
+- The current BiGRU fusion pass favors `EMS + GazeBase + CRCNS_eye1 + OneStop` over EMS-only, HBN fusion, and full public fusion by mean downstream AUC.
+- HBN and full public fusion did not improve the BiGRU encoder in the current pass, so additional datasets should be treated as an empirical question rather than an automatic improvement.
+- The next engineering step is Transformer fusion screening, then encoder hyperparameter narrowing, then downstream dual-stream ablation and final encoder-to-downstream fusion.
 
 See `docs/current_experiment_summary.md` for the current experiment table and next experimental order.
+See `docs/server_training_workflow.md` for the remote training and lightweight result-sync workflow.
 
 ## Environment Setup
 

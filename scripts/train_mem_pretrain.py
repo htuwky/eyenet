@@ -23,9 +23,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--patience", type=int, default=12)
     parser.add_argument("--learning-rate", type=float, default=1e-3)
     parser.add_argument("--weight-decay", type=float, default=1e-4)
+    parser.add_argument("--encoder-type", choices=["bigru_attention", "transformer"], default="bigru_attention")
     parser.add_argument("--projection-dim", type=int, default=64)
     parser.add_argument("--hidden-dim", type=int, default=64)
     parser.add_argument("--attention-dim", type=int, default=64)
+    parser.add_argument("--num-layers", type=int, default=1)
+    parser.add_argument("--num-heads", type=int, default=4)
+    parser.add_argument("--feedforward-dim", type=int, default=256)
     parser.add_argument("--dropout", type=float, default=0.3)
     parser.add_argument("--random-seed", type=int, default=42)
     parser.add_argument("--max-seq-len", type=int, default=None)
@@ -49,9 +53,13 @@ def main() -> None:
         patience=args.patience,
         learning_rate=args.learning_rate,
         weight_decay=args.weight_decay,
+        encoder_type=args.encoder_type,
         projection_dim=args.projection_dim,
         hidden_dim=args.hidden_dim,
         attention_dim=args.attention_dim,
+        num_layers=args.num_layers,
+        num_heads=args.num_heads,
+        feedforward_dim=args.feedforward_dim,
         dropout=args.dropout,
         random_seed=args.random_seed,
         max_seq_len=args.max_seq_len,

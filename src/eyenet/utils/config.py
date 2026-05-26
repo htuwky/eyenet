@@ -3,10 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-try:
-    import yaml
-except ModuleNotFoundError:  # pragma: no cover - exercised when PyYAML is absent.
-    yaml = None
+import yaml
 
 
 def load_yaml_config(path: str | Path | None) -> dict[str, Any]:
@@ -17,61 +14,11 @@ def load_yaml_config(path: str | Path | None) -> dict[str, Any]:
         raise FileNotFoundError(f"Config file does not exist: {config_path}")
     with config_path.open("r", encoding="utf-8") as handle:
         text = handle.read()
-    data = yaml.safe_load(text) if yaml is not None else parse_simple_yaml(text)
+    data = yaml.safe_load(text)
     data = data or {}
     if not isinstance(data, dict):
         raise ValueError(f"Config root must be a mapping: {config_path}")
     return data
-
-
-def parse_simple_yaml(text: str) -> dict[str, Any]:
-    root: dict[str, Any] = {}
-    stack: list[tuple[int, dict[str, Any]]] = [(-1, root)]
-    for raw_line in text.splitlines():
-        line = raw_line.split("#", 1)[0].rstrip()
-        if not line.strip():
-            continue
-        indent = len(line) - len(line.lstrip(" "))
-        stripped = line.strip()
-        if ":" not in stripped:
-            raise ValueError(f"Unsupported YAML line: {raw_line}")
-        key, raw_value = stripped.split(":", 1)
-        key = key.strip()
-        raw_value = raw_value.strip()
-        while stack and indent <= stack[-1][0]:
-            stack.pop()
-        parent = stack[-1][1]
-        if raw_value == "":
-            value: Any = {}
-            parent[key] = value
-            stack.append((indent, value))
-        else:
-            parent[key] = parse_scalar(raw_value)
-    return root
-
-
-def parse_scalar(value: str) -> Any:
-    if value in {"null", "Null", "NULL", "~"}:
-        return None
-    if value.lower() == "true":
-        return True
-    if value.lower() == "false":
-        return False
-    if value.startswith("[") and value.endswith("]"):
-        inner = value[1:-1].strip()
-        if not inner:
-            return []
-        return [parse_scalar(part.strip()) for part in inner.split(",")]
-    try:
-        return int(value)
-    except ValueError:
-        pass
-    try:
-        return float(value)
-    except ValueError:
-        pass
-    return value.strip("\"'")
-
 
 def section(config: dict[str, Any], key: str) -> dict[str, Any]:
     value = config.get(key, {})
