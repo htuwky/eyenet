@@ -1,6 +1,6 @@
 # EyeNet
 
-EyeNet is a content-agnostic eye-movement modeling project for mental-health risk screening. The current codebase establishes a reproducible EMS schizophrenia benchmark and prepares the project for multi-dataset self-supervised encoder pretraining.
+EyeNet is a content-agnostic eye-movement modeling project for mental-health risk screening. The current codebase establishes a reproducible EMS schizophrenia benchmark and a phase-1 self-supervised encoder result.
 
 The long-term target is a deployable preliminary screening system that can work across eye trackers, screen settings, and viewing paradigms by using eye-movement behavior rather than image or video content.
 
@@ -40,13 +40,17 @@ Implemented:
 
 Current conclusion:
 
-- EMS fixed-split supervised modeling is functional.
-- Multi-seed masked-event pretraining plus supervised fine-tuning is the current encoder-selection path.
-- The current BiGRU fusion pass favors `EMS + GazeBase + CRCNS_eye1 + OneStop` over EMS-only, HBN fusion, and full public fusion by mean downstream AUC.
-- HBN and full public fusion did not improve the BiGRU encoder in the current pass, so additional datasets should be treated as an empirical question rather than an automatic improvement.
-- The next engineering step is Transformer fusion screening, then encoder hyperparameter narrowing, then downstream dual-stream ablation and final encoder-to-downstream fusion.
+- Phase-1 encoder selection is complete enough for report and draft writing.
+- The main result is strict aligned five-seed BiGRU MEM pretraining followed by EMS supervised fine-tuning.
+- `EMS-only MEM BiGRU fine-tune` has the strongest mean test balanced accuracy.
+- `EMS + GazeBase + CRCNS_eye1 + OneStop` has the strongest mean test AUC among public-data fusion candidates.
+- Public datasets help empirically, but more public sources do not automatically improve downstream EMS balanced accuracy.
+- Old segment-GRU dual-stream and new strict summary+encoder dual-stream runs are closed as exploratory evidence because they did not beat the encoder-only balanced-accuracy reference.
+- Transformer experiments are future exploratory work, not the current mainline.
 
 See `docs/current_experiment_summary.md` for the current experiment table and next experimental order.
+See `docs/encoder_model_selection_summary.md` for the phase-1 encoder source-of-truth table.
+See `docs/old_encoder_dual_stream_closure.md` and `docs/new_summary_encoder_dual_stream_closure.md` for dual-stream closure.
 See `docs/server_training_workflow.md` for the remote training and lightweight result-sync workflow.
 
 ## Environment Setup
@@ -231,16 +235,13 @@ Recommended reading order:
 
 ## Next Engineering Step
 
-Screen the remaining public datasets before broad model and hyperparameter ablation:
+The current priority is documentation and reproducibility cleanup, not another long training run:
 
 ```text
-data/raw/Saliency4ASD/
-  -> inspect fixation/raw table structure and metadata
-  -> convert usable eye-movement records to shared EyeNet event schema
-  -> validate schema
-  -> subject-level QC
-  -> encoder-ready no-position table
-  -> masked-event modeling smoke test
+1. Keep phase-1 encoder tables as the current source of truth.
+2. Use strict aligned five-seed results in report and paper drafts.
+3. Keep old and new dual-stream results as exploratory closure evidence.
+4. Defer Transformer and new model search until the phase-1 story is written cleanly.
 ```
 
-CRCNS eye-1 should follow after local-file availability is verified.
+Future dataset/model work can resume after the report and draft are stable.

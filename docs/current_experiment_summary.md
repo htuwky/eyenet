@@ -1,6 +1,6 @@
 # Current Experiment Summary
 
-Last updated: 2026-05-25
+Last updated: 2026-05-27
 
 This document summarizes the current EyeNet encoder-pretraining state after dataset screening, numerical-stability fixes, and the first controlled aligned multi-seed model-selection run.
 
@@ -141,51 +141,97 @@ mask_strategy: span
 mask_span_events: 2-8
 ```
 
-## Aligned Model-Selection Result
+## Phase-1 Aligned Model-Selection Result
 
-Strict aligned protocol:
+The current source of truth is:
 
 ```text
-pretraining data: EMS + CRCNS eye-1
-anchor dataset: EMS
-seeds: 0,1,2,3,4
-batch_size: 8
-max_seq_len: 1500
-encoder: BiGRU64 attention
-mask_probability: 0.45
-compared dropout: 0.3 vs 0.4
-downstream mode: supervised fine-tuning
+experiments/encoder_downstream/phase1_encoder_summary.csv
+experiments/encoder_downstream/phase1_encoder_split_leakage_audit.csv
+docs/encoder_model_selection_summary.md
+```
+
+Strict aligned split audit:
+
+```text
+checked split rows: 35
+passed rows: 35
+max downstream-test overlap with MEM train: 0
+max downstream-test overlap with MEM valid: 0
 ```
 
 Primary threshold: validation-selected best balanced accuracy.
 
-| Experiment | Mode | Seeds | AUC Mean | AUC Std | Balanced Accuracy Mean | Balanced Accuracy Std | Sensitivity Mean | Specificity Mean | Interpretation |
-| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
-| CRCNS+EMS MEM, dropout 0.3 | fine-tune | 0-4 | 0.813 | 0.062 | 0.725 | 0.060 | 0.788 | 0.663 | Current primary model. Best overall AUC/BA balance. |
-| CRCNS+EMS MEM, dropout 0.4 | fine-tune | 0-4 | 0.804 | 0.043 | 0.719 | 0.049 | 0.713 | 0.725 | More conservative; higher specificity, lower sensitivity. |
-| CRCNS+EMS MEM, dropout 0.3 | frozen | 0-4 | 0.719 | 0.072 | 0.613 | 0.098 | 0.813 | 0.413 | Frozen probing is not competitive. |
-| CRCNS+EMS MEM, dropout 0.4 | frozen | 0-4 | 0.709 | 0.067 | 0.631 | 0.060 | 0.763 | 0.500 | Frozen probing remains weak. |
+| Experiment | Mode | Seeds | AUC Mean | AUC Std | Balanced Accuracy Mean | Balanced Accuracy Std | Sensitivity Mean | Specificity Mean |
+| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| EMS-only MEM BiGRU | fine-tune | 0-4 | 0.798 | 0.064 | 0.750 | 0.058 | 0.713 | 0.788 |
+| EMS+GazeBase+CRCNS+OneStop BiGRU | fine-tune | 0-4 | 0.825 | 0.044 | 0.731 | 0.047 | 0.775 | 0.688 |
+| EMS+CRCNS BiGRU | fine-tune | 0-4 | 0.813 | 0.062 | 0.725 | 0.060 | 0.788 | 0.663 |
+| EMS+GazeBase+CRCNS BiGRU | fine-tune | 0-4 | 0.800 | 0.049 | 0.725 | 0.026 | 0.725 | 0.725 |
+| EMS+CRCNS aligned BiGRU, seq3000 | fine-tune | 0-4 | 0.809 | 0.038 | 0.706 | 0.042 | 0.738 | 0.675 |
+| EMS+GazeBase+CRCNS+HBN BiGRU | fine-tune | 0-4 | 0.795 | 0.071 | 0.700 | 0.087 | 0.750 | 0.650 |
+| Supervised-only BiGRU | supervised | 0-4 | 0.784 | 0.069 | 0.700 | 0.114 | 0.800 | 0.600 |
+| EMS+All-public BiGRU | fine-tune | 0-4 | 0.782 | 0.074 | 0.694 | 0.051 | 0.788 | 0.600 |
 
 Decision:
 
-- Use `bigru64_ems_crcns_mask045_aligned` as the current primary model.
-- Keep `bigru64_ems_crcns_mask045_dropout04_aligned` as a high-specificity secondary candidate.
-- Do not use frozen encoder as the main downstream method.
-- Do not include single-seed `mask0.30` or `batch16` runs in final comparisons.
+- Use `bigru64_mask045_fusion_ems_only` as the strongest phase-1 balanced-accuracy model.
+- Use `bigru64_mask045_fusion_ems_gazebase_crcns_eye1_onestop` as the strongest public-data AUC candidate.
+- Do not claim that adding more public data monotonically improves transfer.
+- Do not use frozen encoder probing as the main downstream method.
 
 ## Current Best Statement
 
 The defensible current statement is:
 
 ```text
-Across five EMS stratified subject splits, EMS-only masked event modeling followed by supervised fine-tuning improves downstream SZ/HC classification over from-scratch encoder training. After public dataset screening and strict EMS-anchor split alignment, CRCNS eye-1 plus EMS pretraining with a BiGRU64 encoder, span masking at probability 0.45, dropout 0.3, and supervised fine-tuning is the current primary model-selection result. The improvement over EMS-only is not yet decisive, but CRCNS provides the best public-data transfer route tested so far. Frozen encoder probing is consistently weaker than fine-tuning.
+Across five EMS stratified subject splits, masked event modeling followed by supervised fine-tuning improves the encoder pipeline over supervised-only training in the strongest phase-1 configuration. EMS-only MEM has the highest mean balanced accuracy, while EMS+GazeBase+CRCNS+OneStop has the highest mean AUC among public-data fusion candidates. Public data is therefore useful as transfer evidence, but more sources do not automatically improve the primary balanced-accuracy criterion. Frozen encoder probing is consistently weaker than fine-tuning.
 ```
+
+## Phase-2 Dual-Stream Closure
+
+Dual-stream experiments were run after the phase-1 encoder line to test whether a second, content-agnostic subject-summary stream adds stable information beyond the pretrained event encoder.
+
+Current dual-stream source files:
+
+```text
+experiments/ems_encoder_dual_stream/old_encoder_dual_stream_summary.csv
+experiments/ems_subject_summary_baseline_strict/summary.csv
+experiments/ems_summary_encoder_dual_stream/summary.csv
+docs/old_encoder_dual_stream_closure.md
+docs/new_summary_encoder_dual_stream_closure.md
+```
+
+Primary threshold: validation-selected best balanced accuracy.
+
+| Model | Seeds | AUC Mean | AUC Std | Balanced Accuracy Mean | Balanced Accuracy Std | Sensitivity Mean | Specificity Mean | F1 Mean |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| EMS-only MEM BiGRU fine-tune | 0-4 | 0.798 | 0.064 | 0.750 | 0.058 | 0.713 | 0.788 | 0.738 |
+| EMS+GazeBase+CRCNS+OneStop BiGRU fine-tune | 0-4 | 0.825 | 0.044 | 0.731 | 0.047 | 0.775 | 0.688 | 0.740 |
+| Strict summary-only logistic regression | 0-4 | 0.805 | 0.079 | 0.731 | 0.084 | 0.763 | 0.700 | 0.738 |
+| Strict summary + encoder dual-stream gated | 0-4 | 0.806 | 0.043 | 0.725 | 0.046 | 0.675 | 0.775 | 0.699 |
+| Strict summary-only SVM-RBF | 0-4 | 0.840 | 0.056 | 0.719 | 0.070 | 0.750 | 0.688 | 0.720 |
+| Strict summary + encoder dual-stream residual-logit | 0-4 | 0.795 | 0.047 | 0.713 | 0.041 | 0.775 | 0.650 | 0.727 |
+| Strict summary + encoder dual-stream concat | 0-4 | 0.809 | 0.045 | 0.706 | 0.065 | 0.738 | 0.675 | 0.701 |
+| Old encoder + segment-GRU dual-stream gated | 0-4 | 0.811 | 0.074 | 0.725 | 0.105 | 0.838 | 0.613 | 0.756 |
+| Old encoder + segment-GRU dual-stream concat | 0-4 | 0.799 | 0.058 | 0.694 | 0.078 | 0.675 | 0.713 | 0.688 |
+
+Interpretation:
+
+- Strict subject-summary features have independent predictive signal.
+- However, all tested fusion mechanisms failed to improve over the strongest encoder-only balanced-accuracy reference:
+  - old segment-GRU macro-stream concat/gated fusion
+  - new strict subject-summary concat fusion
+  - new strict subject-summary gated fusion
+  - new strict subject-summary residual-logit auxiliary fusion
+- The current evidence therefore supports keeping `encoder-only MEM BiGRU fine-tuning` as the main model.
+- Dual-stream results should be reported as exploratory negative evidence or future-work motivation, not as the main model.
 
 ## Next Experimental Order
 
-1. Stop broad architecture search for now.
-2. Compare the aligned CRCNS result directly against EMS-only MEM and from-scratch in one paper table.
-3. Update paper draft and project handoff docs with the aligned protocol.
-4. Run one final confirmation only if needed:
-   - `max_seq_len=3000` for the primary dropout 0.3 model, because 16GB GPU memory can be used there without changing batch size in the main protocol.
-5. Move next to engineering cleanup or the next carefully selected public dataset only after the current model-selection result is documented.
+1. Stop broad model search for now.
+2. Use the phase-1 encoder summary and leakage audit in the paper/report.
+3. Treat dual-stream as closed exploratory negative evidence under the current EMS label scale.
+4. Keep Transformer experiments as future exploratory work, not current mainline.
+5. Update tables to distinguish `smoke`, `single_split`, `exploratory`, and `final_aligned_5seed` results.
+6. Resume model development only after the phase-1 encoder story is written cleanly.

@@ -29,8 +29,27 @@ Before deep models, run interpretable machine-learning baselines:
 - Single-source vs multi-source training when additional datasets are available
 - Without vs with domain adaptation when multi-source training begins
 
+## Result Tiers
+
+The project distinguishes four result tiers:
+
+- `smoke`: engineering checks only. These verify that code runs and must not be reported as scientific results.
+- `single_split`: fast screening on one split. These can guide the next run but do not support final claims.
+- `exploratory`: useful model-search evidence, including non-aligned mixed pretraining, Transformer trials, and dual-stream prototypes.
+- `final_aligned_5seed`: strict EMS-anchor aligned five-seed results. These are the only phase-1 results that should enter the main paper/report tables.
+
 ## Current EMS Main Result Policy
 
-The current main model candidate is dual-stream concat fusion. Gated fusion is retained as a supplementary experiment because it did not improve the held-out test result in the current fixed split.
+The current phase-1 main line is encoder pretraining and EMS fine-tuning, not dual-stream fusion.
 
-Smoke-test outputs under `experiments/smoke_tests/` are engineering checks only and must not be reported as paper results.
+Use the strict aligned five-seed encoder results as the current source of truth:
+
+```text
+experiments/encoder_downstream/phase1_encoder_summary.csv
+experiments/encoder_downstream/phase1_encoder_split_leakage_audit.csv
+docs/encoder_model_selection_summary.md
+```
+
+Dual-stream models are retained as phase-2 exploratory work. They should not be used to select or describe the phase-1 primary encoder.
+
+Smoke-test outputs under `experiments/smoke_tests/` and temporary smoke directories are engineering checks only and must not be reported as paper results.

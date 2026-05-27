@@ -26,6 +26,7 @@ validate_dataset_schema.py
 extract_ems_features.py
 extract_ems_segment_features.py
 build_ems_event_temporal_sequences.py
+build_ems_subject_summary_features.py
 ```
 
 ## Baselines and Fixed-Split Models
@@ -40,6 +41,9 @@ train_ems_event_temporal_sequence.py
 train_ems_event_temporal_sequence_fixed_split.py
 train_ems_dual_stream_concat_fixed_split.py
 train_ems_dual_stream_gated_fixed_split.py
+train_ems_encoder_dual_stream_fixed_split.py
+train_ems_subject_summary_baseline.py
+train_ems_summary_encoder_dual_stream_fixed_split.py
 ```
 
 ## Encoder Pretraining
@@ -50,6 +54,7 @@ train_masked_event_modeling_smoke.py
 train_mem_pretrain.py
 train_supervised_encoder_smoke.py
 summarize_encoder_transfer_results.py
+summarize_phase1_encoder_results.py
 ```
 
 ## Analysis and Diagnostics
@@ -66,6 +71,9 @@ diagnose_ems_fold_distribution.py
 diagnose_event_temporal_sequence.py
 summarize_fixed_split_results.py
 summarize_qc_variant_results.py
+summarize_old_encoder_dual_stream.py
+summarize_ems_subject_summary_baseline.py
+summarize_ems_summary_encoder_dual_stream.py
 validate_attention_statistics.py
 ```
 
@@ -73,6 +81,7 @@ validate_attention_statistics.py
 
 ```text
 create_paper_draft_docx.py
+create_phase1_docx_deliverables.py
 ```
 
 ## Current Main Next Command
@@ -85,16 +94,20 @@ cd D:\CodeProjects\Python\eyenet
 python -m pip install -e .
 ```
 
-Current next dataset task is Saliency4ASD adapter screening. HBN and GazeBase have already completed the shared path:
+The current project priority is phase-1 documentation and reproducibility cleanup. Do not start long training jobs without an explicit run decision.
+
+Current source-of-truth summaries:
 
 ```text
-raw/public dataset
-  -> shared fixation-event schema
-  -> validate_dataset_schema.py
-  -> build_subject_qc_report.py
-  -> build_encoder_ready_table.py
-  -> combine_encoder_ready_tables.py with EMS
-  -> create_self_supervised_subject_split.py
-  -> check_encoder_dataloader.py
-  -> train_mem_pretrain.py
+experiments/encoder_downstream/phase1_encoder_summary.csv
+experiments/encoder_downstream/phase1_encoder_split_leakage_audit.csv
+experiments/ems_encoder_dual_stream/old_encoder_dual_stream_summary.csv
+experiments/ems_subject_summary_baseline_strict/summary.csv
+experiments/ems_summary_encoder_dual_stream/summary.csv
+docs/current_experiment_summary.md
+docs/encoder_model_selection_summary.md
+docs/old_encoder_dual_stream_closure.md
+docs/new_summary_encoder_dual_stream_closure.md
 ```
+
+Transformer, Saliency4ASD, and additional dual-stream design are deferred until the phase-1 report and paper draft are stable.
