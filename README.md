@@ -51,6 +51,7 @@ Current conclusion:
 See `docs/current_experiment_summary.md` for the current experiment table and next experimental order.
 See `docs/encoder_model_selection_summary.md` for the phase-1 encoder source-of-truth table.
 See `docs/old_encoder_dual_stream_closure.md` and `docs/new_summary_encoder_dual_stream_closure.md` for dual-stream closure.
+See `docs/model_profiles_and_next_steps.md` for the research/deployment profile strategy.
 See `docs/server_training_workflow.md` for the remote training and lightweight result-sync workflow.
 
 ## Environment Setup
@@ -235,13 +236,22 @@ Recommended reading order:
 
 ## Next Engineering Step
 
-The current priority is documentation and reproducibility cleanup, not another long training run:
+The next phase separates two model profiles without duplicating every training run:
 
 ```text
-1. Keep phase-1 encoder tables as the current source of truth.
-2. Use strict aligned five-seed results in report and paper drafts.
-3. Keep old and new dual-stream results as exploratory closure evidence.
-4. Defer Transformer and new model search until the phase-1 story is written cleanly.
+research_profile:
+  publication-facing AUC/F1/balanced-accuracy optimization
+
+deployment_profile:
+  hospital screening prototype focused on stability, QC, calibration, and maintainability
 ```
 
-Future dataset/model work can resume after the report and draft are stable.
+Most experiments should train once, save predictions, and then be evaluated under both profiles. Only final candidates should receive profile-specific optimization.
+
+Immediate next step:
+
+```text
+1. Recompute existing encoder predictions under F1-oriented threshold policies.
+2. Start a small BiGRU hyperparameter ablation for the research profile.
+3. Keep the current encoder-only MEM BiGRU as the deployment baseline until a better stable candidate is proven.
+```

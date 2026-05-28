@@ -229,9 +229,35 @@ Interpretation:
 
 ## Next Experimental Order
 
-1. Stop broad model search for now.
-2. Use the phase-1 encoder summary and leakage audit in the paper/report.
-3. Treat dual-stream as closed exploratory negative evidence under the current EMS label scale.
-4. Keep Transformer experiments as future exploratory work, not current mainline.
-5. Update tables to distinguish `smoke`, `single_split`, `exploratory`, and `final_aligned_5seed` results.
-6. Resume model development only after the phase-1 encoder story is written cleanly.
+The next phase separates `research_profile` and `deployment_profile` without training every experiment twice.
+
+```text
+research_profile
+  publication-facing AUC/F1/balanced-accuracy optimization
+
+deployment_profile
+  hospital screening prototype focused on stability, QC, calibration, and maintainability
+```
+
+Shared rule:
+
+```text
+train once
+save checkpoint and predictions
+evaluate under both profiles
+only final candidates receive profile-specific optimization
+```
+
+Immediate order:
+
+1. Recompute existing encoder predictions under F1-oriented and sensitivity-constrained validation thresholds.
+2. Keep the current encoder-only MEM BiGRU fine-tune result as the phase-1 main model and deployment baseline.
+3. Start research-profile BiGRU hyperparameter ablation only after threshold-only gains are checked.
+4. Treat dual-stream as closed exploratory negative evidence under the current EMS label scale.
+5. Keep Transformer experiments as future exploratory work unless the research-profile BiGRU ablation saturates.
+
+See:
+
+```text
+docs/model_profiles_and_next_steps.md
+```
