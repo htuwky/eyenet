@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 METRIC_COLUMNS = ["auc", "accuracy", "balanced_accuracy", "sensitivity", "specificity", "f1"]
 
 

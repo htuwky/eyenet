@@ -27,8 +27,10 @@ from eyenet.training.fixed_split_baseline import attach_fixed_split
 from eyenet.training.segment_sequence import (
     build_subject_sequences,
     get_segment_feature_columns,
-    prepare_fixed_split_data as prepare_macro_fixed_split_data,
     set_seed,
+)
+from eyenet.training.segment_sequence import (
+    prepare_fixed_split_data as prepare_macro_fixed_split_data,
 )
 from eyenet.training.thresholds import analyze_thresholds, choose_thresholds
 
@@ -410,9 +412,9 @@ def build_encoder_dual_dataset(
         max_seq_len=max_seq_len,
         require_label=True,
     )
-    macro_array_map = dict(zip(macro_subjects, macro_arrays))
-    macro_mask_map = dict(zip(macro_subjects, macro_masks))
-    macro_label_map = dict(zip(macro_subjects, macro_labels))
+    macro_array_map = dict(zip(macro_subjects, macro_arrays, strict=False))
+    macro_mask_map = dict(zip(macro_subjects, macro_masks, strict=False))
+    macro_label_map = dict(zip(macro_subjects, macro_labels, strict=False))
     encoder_max_len = int(max(sample["features"].shape[0] for sample in encoder_dataset.samples))
     encoder_array_map = {}
     encoder_mask_map = {}

@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 METRICS = ["auc", "accuracy", "balanced_accuracy", "sensitivity", "specificity", "f1"]
 EXPERIMENT_PATTERN = re.compile(r"(?P<name>.+)_seed(?P<seed>\d+)$")
 

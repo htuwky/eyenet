@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 FUSION_DATASETS = {
     "ems_only": "data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv",
     "ems_crcns_eye1": "data/processed/mixed/ems_crcns_eye1_encoder_events.csv",

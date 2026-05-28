@@ -6,12 +6,12 @@ import random
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 import torch
 from sklearn.impute import SimpleImputer
-from sklearn.metrics import accuracy_score, balanced_accuracy_score, f1_score, roc_auc_score
+from sklearn.metrics import roc_auc_score
 from sklearn.preprocessing import StandardScaler
 from torch import nn
 from torch.utils.data import DataLoader, Dataset
@@ -460,7 +460,7 @@ def train_official_folds(
                 **metrics,
             }
         )
-        for subject_id, label, prob, pred in zip(subject_ids, y_true, y_prob, y_pred):
+        for subject_id, label, prob, pred in zip(subject_ids, y_true, y_prob, y_pred, strict=False):
             prediction_rows.append(
                 {
                     "fold": fold,

@@ -12,7 +12,6 @@ import pandas as pd
 from eyenet.data.fixation_detection import IDTFixationConfig, detect_fixations_idt
 from eyenet.data.hbn import add_transition_and_encoder_columns, describe_numeric
 
-
 SUBJECT_ZIP_RE = re.compile(r"Round_(?P<round_id>\d+)/Subject_(?P<round_subject_id>\d+)\.zip$")
 CSV_RE = re.compile(r"S(?P<session_id>\d+)/.+/S_\d+_S\d+_(?P<task_name>[A-Z0-9]+)\.csv$")
 

@@ -5,7 +5,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-
 VARIANTS = {
     "macro": "scripts/train_ems_segment_sequence_fixed_split.py",
     "event": "scripts/train_ems_event_temporal_sequence_fixed_split.py",

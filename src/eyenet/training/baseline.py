@@ -94,7 +94,7 @@ def run_official_fold_baseline(features: pd.DataFrame, random_seed: int = 42) ->
             rows.append({"model": spec.name, "fold": fold, **metrics})
 
             for subject_id, y_true, y_prob, y_pred in zip(
-                valid_df["subject_id"], valid_df["label"], prob, pred
+                valid_df["subject_id"], valid_df["label"], prob, pred, strict=False
             ):
                 prediction_rows.append(
                     {

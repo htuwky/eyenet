@@ -10,8 +10,7 @@ import pandas as pd
 import torch
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
-from torch.utils.data import DataLoader, Dataset
-from torch.utils.data import WeightedRandomSampler
+from torch.utils.data import DataLoader, Dataset, WeightedRandomSampler
 
 
 @dataclass(frozen=True)

@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 EVENT_TEMPORAL_FEATURE_COLUMNS = [
     "subject_event_index_norm",
     "x_norm",

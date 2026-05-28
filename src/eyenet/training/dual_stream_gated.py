@@ -5,9 +5,9 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 import torch
 from sklearn.metrics import roc_auc_score
 from torch import nn
@@ -24,16 +24,19 @@ from eyenet.training.dual_stream_concat import (
 )
 from eyenet.training.event_temporal_sequence import (
     get_event_feature_columns,
+)
+from eyenet.training.event_temporal_sequence import (
     prepare_fixed_split_data as prepare_event_fixed_split_data,
 )
 from eyenet.training.fixed_split_baseline import attach_fixed_split
 from eyenet.training.segment_sequence import (
     get_segment_feature_columns,
-    prepare_fixed_split_data as prepare_macro_fixed_split_data,
     set_seed,
 )
+from eyenet.training.segment_sequence import (
+    prepare_fixed_split_data as prepare_macro_fixed_split_data,
+)
 from eyenet.training.thresholds import analyze_thresholds, choose_thresholds
-
 
 DualStreamGatedConfig = DualStreamConcatConfig
 

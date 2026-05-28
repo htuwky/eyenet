@@ -9,7 +9,6 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
-
 OUTPUT = Path("docs/paper_drafts/content_agnostic_eye_movement_screening_draft.docx")
 
 

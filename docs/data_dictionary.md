@@ -20,8 +20,9 @@ This document defines the shared EyeNet fixation-event schema. All datasets must
 
 | Field | Description | Used As Feature |
 | --- | --- | --- |
-| `split` | Dataset-provided or project-generated split. | No |
-| `fold` | Dataset-provided fold or project fold. | No |
+| `split` | Dataset-provided or project-generated split. Current EMS mainline uses `train`, `valid`, and `test`. | No |
+| `fold` | Legacy or dataset-provided fold metadata. Not the active EMS evaluation driver. | No |
+| `official_fold` | EMS official fold retained as metadata after fixed 60/20/20 split creation. | No |
 | `x_dva` | Horizontal visual angle coordinate when screen geometry is known. | Yes, optional |
 | `y_dva` | Vertical visual angle coordinate when screen geometry is known. | Yes, optional |
 | `saccade_dx_norm` | Transition displacement in normalized horizontal units. | Yes |
@@ -55,3 +56,5 @@ This document defines the shared EyeNet fixation-event schema. All datasets must
 - Pupil features are optional and must not be required by the core model.
 - DVA features are preferred when hardware metadata is available, but the encoder must be able to run without them.
 - Clinical labels from different disorders must not be merged into one binary target.
+- Current EMS supervised training and final evaluation use `split`, not `fold`.
+- `fold` is allowed only for legacy scripts, external dataset metadata, and diagnostics.

@@ -376,8 +376,8 @@ def build_dataset(
 ) -> SummaryEncoderDualStreamDataset:
     summary_split = summary_data[summary_data["split"] == split_name].copy().sort_values("subject_id")
     summary_values = summary_preprocessor.transform(summary_split)
-    summary_array_map = dict(zip(summary_split["subject_id"], summary_values))
-    summary_label_map = dict(zip(summary_split["subject_id"], summary_split["label"].astype(int)))
+    summary_array_map = dict(zip(summary_split["subject_id"], summary_values, strict=False))
+    summary_label_map = dict(zip(summary_split["subject_id"], summary_split["label"].astype(int), strict=False))
 
     encoder_dataset = SubjectSequenceDataset(
         events=encoder_events,

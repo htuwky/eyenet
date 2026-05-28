@@ -24,4 +24,11 @@
 - Use `IMAGE` as `trial_id` only.
 - Do not connect fixations across different images.
 - Do not use image content or image names as model features.
-- The official 4-fold split in `Train_Valid.xlsx` should be the primary evaluation split.
+- The current primary evaluation protocol is a subject-level fixed split:
+
+```text
+train / valid / test = 60 / 20 / 20
+```
+
+- The EMS official 4-fold fields from `Train_Valid.xlsx` are retained only as legacy metadata and diagnostics.
+- Do not use official 4-fold cross-validation as the main research or deployment evaluation protocol.

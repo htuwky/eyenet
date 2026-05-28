@@ -10,7 +10,6 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-
 DEFAULT_INPUT = "data/raw/OneStop/precomputed_events/fixations_Paragraph.csv"
 DEFAULT_OUTPUT = "data/processed/OneStop/onestop_fixation_audit.json"
 
@@ -241,7 +240,7 @@ def parse_interest_area_rectangle(value: str) -> tuple[float, float, float, floa
 def parse_points(value: str) -> list[tuple[float, float]]:
     # Example: [(930,414), (180,756), (1680,756), (930,1098)]
     numbers = [float(item) for item in NUMBER_PATTERN.findall(value)]
-    return list(zip(numbers[0::2], numbers[1::2]))
+    return list(zip(numbers[0::2], numbers[1::2], strict=False))
 
 
 def summarize_arrays(arrays: list[np.ndarray]) -> dict[str, float | int | None]:

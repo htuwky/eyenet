@@ -6,7 +6,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 METRICS = ["auc", "accuracy", "balanced_accuracy", "sensitivity", "specificity", "f1"]
 
 
@@ -192,7 +191,7 @@ def summarize(per_seed: pd.DataFrame) -> pd.DataFrame:
         "mode",
     ]
     for keys, group in complete.groupby(group_cols, sort=True):
-        row = dict(zip(group_cols, keys))
+        row = dict(zip(group_cols, keys, strict=False))
         row["n_seeds"] = int(group["seed"].nunique())
         row["seeds"] = ",".join(str(seed) for seed in sorted(group["seed"].unique()))
         row["complete_5seed"] = row["n_seeds"] == 5

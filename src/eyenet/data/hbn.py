@@ -10,7 +10,6 @@ import pandas as pd
 
 from eyenet.data.fixation_detection import IDTFixationConfig, detect_fixations_idt, prepare_raw_gaze_samples
 
-
 HBN_FILENAME_RE = re.compile(r"^(?P<subject_id>NDAR[A-Z0-9]+)_(?P<trial_id>.+)\.csv$")
 
 

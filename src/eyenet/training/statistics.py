@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from scipy.stats import mannwhitneyu, ttest_ind
 
-
 DEFAULT_FEATURES = [
     "scanpath_length_dva",
     "scanpath_length_norm",

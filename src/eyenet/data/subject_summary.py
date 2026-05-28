@@ -7,7 +7,6 @@ import pandas as pd
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 
-
 EXCLUDE_COLUMNS = {"subject_id", "fold", "official_fold", "split", "label"}
 STRICT_ALLOWED_TOKENS = (
     "short_fixation_ratio_lt150ms",

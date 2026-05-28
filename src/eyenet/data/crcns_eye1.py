@@ -13,7 +13,6 @@ import pandas as pd
 from eyenet.data.fixation_detection import IDTFixationConfig, detect_fixations_idt, prepare_raw_gaze_samples
 from eyenet.data.hbn import add_transition_and_encoder_columns, describe_numeric
 
-
 EYE_FILE_RE = re.compile(
     r"^CRCNS-DataShare/(?P<experiment>data-orig|data-mtv)/(?P<subject_dir>[^/]+)/(?P<clip_stem>[^/]+)\.e-ceyeS$"
 )

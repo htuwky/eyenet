@@ -5,7 +5,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 DEFAULT_PROFILE_FEATURES = [
     "n_trials",
     "n_fixations",

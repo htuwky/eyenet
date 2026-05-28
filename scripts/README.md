@@ -32,18 +32,24 @@ build_ems_subject_summary_features.py
 ## Baselines and Fixed-Split Models
 
 ```text
-train_ems_baseline.py
 train_ems_baseline_fixed_split.py
-train_ems_segment_baseline.py
-train_ems_segment_sequence.py
 train_ems_segment_sequence_fixed_split.py
-train_ems_event_temporal_sequence.py
 train_ems_event_temporal_sequence_fixed_split.py
 train_ems_dual_stream_concat_fixed_split.py
 train_ems_dual_stream_gated_fixed_split.py
 train_ems_encoder_dual_stream_fixed_split.py
 train_ems_subject_summary_baseline.py
 train_ems_summary_encoder_dual_stream_fixed_split.py
+```
+
+Current mainline training uses fixed subject splits with `split=train/valid/test`.
+Legacy official-fold entrypoints are retained for diagnostics and historical comparison only:
+
+```text
+train_ems_baseline.py
+train_ems_segment_baseline.py
+train_ems_segment_sequence.py
+train_ems_event_temporal_sequence.py
 ```
 
 ## Encoder Pretraining
@@ -95,6 +101,15 @@ python -m pip install -e .
 ```
 
 The current project priority is phase-1 documentation and reproducibility cleanup. Do not start long training jobs without an explicit run decision.
+
+Current EMS evaluation protocol:
+
+```text
+mainline split column: split
+mainline split values: train, valid, test
+split ratio: 60 / 20 / 20
+legacy fold fields: fold or official_fold, metadata/diagnostics only
+```
 
 Current source-of-truth summaries:
 

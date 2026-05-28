@@ -5,9 +5,9 @@ import json
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
-import joblib
 import torch
 from sklearn.metrics import roc_auc_score
 from torch import nn
@@ -18,14 +18,18 @@ from eyenet.training.baseline import compute_metrics
 from eyenet.training.event_temporal_sequence import (
     build_subject_event_sequences,
     get_event_feature_columns,
+)
+from eyenet.training.event_temporal_sequence import (
     prepare_fixed_split_data as prepare_event_fixed_split_data,
 )
 from eyenet.training.fixed_split_baseline import attach_fixed_split
 from eyenet.training.segment_sequence import (
     build_subject_sequences,
     get_segment_feature_columns,
-    prepare_fixed_split_data as prepare_macro_fixed_split_data,
     set_seed,
+)
+from eyenet.training.segment_sequence import (
+    prepare_fixed_split_data as prepare_macro_fixed_split_data,
 )
 from eyenet.training.thresholds import analyze_thresholds, choose_thresholds
 
@@ -287,12 +291,12 @@ def build_dual_dataset(
     if len(common_subjects) != len(set(macro_subjects)) or len(common_subjects) != len(set(event_subjects)):
         raise ValueError("Macro and Event streams do not cover the same subjects in this split.")
 
-    macro_array_map = dict(zip(macro_subjects, macro_arrays))
-    macro_mask_map = dict(zip(macro_subjects, macro_masks))
-    event_array_map = dict(zip(event_subjects, event_arrays))
-    event_mask_map = dict(zip(event_subjects, event_masks))
-    macro_label_map = dict(zip(macro_subjects, macro_labels))
-    event_label_map = dict(zip(event_subjects, event_labels))
+    macro_array_map = dict(zip(macro_subjects, macro_arrays, strict=False))
+    macro_mask_map = dict(zip(macro_subjects, macro_masks, strict=False))
+    event_array_map = dict(zip(event_subjects, event_arrays, strict=False))
+    event_mask_map = dict(zip(event_subjects, event_masks, strict=False))
+    macro_label_map = dict(zip(macro_subjects, macro_labels, strict=False))
+    event_label_map = dict(zip(event_subjects, event_labels, strict=False))
     for subject_id in common_subjects:
         if macro_label_map[subject_id] != event_label_map[subject_id]:
             raise ValueError(f"Label mismatch between streams for subject {subject_id}.")

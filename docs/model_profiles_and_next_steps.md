@@ -88,14 +88,15 @@ Current research baseline:
 encoder-only MEM BiGRU fine-tune
 EMS-only: strongest balanced accuracy reference
 EMS+GazeBase+CRCNS+OneStop: strongest public-data AUC candidate
+fixed-split EMS+GazeBase+CRCNS+OneStop late ensemble: current research-profile lead
 ```
 
-Near-term research work:
+Current research work:
 
-1. Recompute existing predictions under F1-oriented and sensitivity-constrained threshold policies.
-2. Run a small BiGRU hyperparameter ablation on encoder-only models.
-3. If single-model gains are limited, test late ensembles using validation-selected weights or simple averaging.
-4. Update paper tables only after strict five-seed results are available.
+1. Freeze the fixed-split OneStop five-seed late ensemble as the current research-profile lead.
+2. Update paper and report tables from `docs/current_experiment_summary.md` and `docs/project_review_2026-05-28.md`.
+3. Keep EMS-only as the randomized-split balanced-accuracy reference and screening baseline.
+4. Move new model work to deployment calibration and inference packaging unless a stronger hypothesis than the closed `bigger96` line is defined.
 
 ## Deployment Profile
 
@@ -182,25 +183,29 @@ deployment_profile final candidate
 
 ## Immediate Next Steps
 
-The next work should start with no-training analysis:
-
-1. Summarize existing encoder predictions under multiple threshold policies.
-2. Compare `valid_best_balanced_accuracy` with `valid_best_f1`.
-3. Identify whether F1 can improve without retraining.
-4. Decide whether BiGRU hyperparameter ablation should optimize EMS-only, EMS+GazeBase+CRCNS+OneStop, or both.
-
-Then run the first small research-profile tuning batch:
+Completed on 2026-05-28:
 
 | Experiment | projection | hidden | dropout | max_seq_len | mask_probability | Purpose |
 | --- | ---: | ---: | ---: | ---: | ---: | --- |
 | baseline | 64 | 64 | 0.3 | 1500 | 0.45 | Current reference |
 | bigger96 | 128 | 96 | 0.3 | 1500 | 0.45 | Test moderate capacity increase |
 | bigger128_regularized | 128 | 128 | 0.4 | 1500 | 0.45 | Test larger model with stronger regularization |
-| longer_seq | 64 | 64 | 0.3 | 3000 | 0.45 | Test whether sequence truncation limits performance |
 | lower_mask | 64 | 64 | 0.3 | 1500 | 0.35 | Test easier MEM task |
 | higher_mask | 64 | 64 | 0.3 | 1500 | 0.55 | Test stronger MEM objective |
 
-Use seed-0 screening first. Promote only the best two or three candidates to five-seed.
+Result:
+
+- `bigger96` won the seed-0 architecture screen but did not beat the existing main candidates after five seeds.
+- The `bigger96` line is closed.
+- Fixed-split `EMS+GazeBase+CRCNS+OneStop` was promoted to the research-profile ensemble test.
+- The fixed-split five-seed late ensemble has complete test-subject coverage and is now the strongest research-profile result.
+
+Current immediate next steps:
+
+1. Update paper/report tables from `docs/current_experiment_summary.md`.
+2. Treat `experiments/research_profile/fixed_split_onestop_ensemble/` as the research-profile source of truth for fixed-split ensemble reporting.
+3. Add deployment-profile calibration and inference packaging only after the research table is frozen.
+4. Do not resume broad BiGRU architecture search unless a new hypothesis is stronger than the closed `bigger96` result.
 
 ## Reporting Rule
 

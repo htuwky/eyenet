@@ -11,7 +11,6 @@ import pandas as pd
 
 from eyenet.utils.config import load_yaml_config
 
-
 REQUIRED_FIXATION_COLUMNS = [
     "IMAGE",
     "FIX_INDEX",

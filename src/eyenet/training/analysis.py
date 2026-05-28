@@ -8,7 +8,6 @@ from sklearn.inspection import permutation_importance
 
 from eyenet.training.baseline import default_model_specs, make_pipeline, summarize_metrics
 
-
 METRIC_COLUMNS = ["auc", "accuracy", "balanced_accuracy", "sensitivity", "specificity", "f1"]
 
 
@@ -98,7 +97,7 @@ def compute_permutation_importance_by_fold(
             random_state=random_seed,
             n_jobs=-1,
         )
-        for feature, mean, std in zip(feature_cols, result.importances_mean, result.importances_std):
+        for feature, mean, std in zip(feature_cols, result.importances_mean, result.importances_std, strict=False):
             rows.append(
                 {
                     "model": model_name,

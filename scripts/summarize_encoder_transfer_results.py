@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 
-
 DEFAULT_RUNS = {
     "from_scratch_supervised": "experiments/encoder_smoke/ems_clipped_qc_no_position",
     "masked_pretrained_finetune": "experiments/encoder_smoke/ems_clipped_qc_no_position_masked_pretrained_finetune",

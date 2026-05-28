@@ -1,6 +1,6 @@
 # Current Experiment Summary
 
-Last updated: 2026-05-27
+Last updated: 2026-05-28
 
 This document summarizes the current EyeNet encoder-pretraining state after dataset screening, numerical-stability fixes, and the first controlled aligned multi-seed model-selection run.
 
@@ -180,12 +180,71 @@ Decision:
 - Do not claim that adding more public data monotonically improves transfer.
 - Do not use frozen encoder probing as the main downstream method.
 
+## Research Profile Fixed-Split Ensemble Result
+
+After the phase-1 randomized-split model selection, the strongest public-data candidate was rerun under one fixed EMS downstream split:
+
+```text
+EMS downstream split: data/splits/EMS/ems_subject_split_60_20_20_seed42.csv
+pretraining source: EMS + GazeBase + CRCNS eye-1 + OneStop
+model: BiGRU MEM fine-tune
+seeds: 0,1,2,3,4
+outputs: experiments/research_profile/fixed_split_onestop_ensemble/
+```
+
+This run separates two evaluation types:
+
+- Five-seed fixed-split stability: every seed uses the same EMS train/valid/test subjects and differs by initialization/training seed plus non-EMS pretraining split seed.
+- Late ensemble: valid only when every test subject has predictions from all five seeds.
+
+The late-ensemble coverage check passed:
+
+```text
+n_seeds=5
+n_test_subject_rows=32
+```
+
+Source files:
+
+```text
+experiments/research_profile/fixed_split_onestop_ensemble/fixed_onestop_fiveseed_threshold_strategy_summary.csv
+experiments/research_profile/fixed_split_onestop_ensemble/fixed_onestop_fiveseed_late_ensemble/selected_thresholds.csv
+experiments/research_profile/fixed_split_onestop_ensemble/fixed_onestop_fiveseed_late_ensemble/seed_coverage.csv
+```
+
+Five-seed fixed-split summary:
+
+| Threshold policy | AUC Mean | Balanced Accuracy Mean | Sensitivity Mean | Specificity Mean | F1 Mean |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| valid_best_balanced_accuracy | 0.872 | 0.738 | 0.875 | 0.600 | 0.770 |
+| valid_best_f1 | 0.872 | 0.706 | 0.888 | 0.525 | 0.754 |
+| valid_screening_sensitivity_at_least_0.80 | 0.872 | 0.713 | 0.913 | 0.513 | 0.764 |
+| default_0.50 | 0.872 | 0.706 | 0.800 | 0.613 | 0.737 |
+
+Late-ensemble selected thresholds:
+
+| Criterion | Threshold | AUC | Balanced Accuracy | Sensitivity | Specificity | F1 |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| best_balanced_accuracy | 0.80 | 0.898 | 0.813 | 0.625 | 1.000 | 0.769 |
+| best_f1 | 0.38 | 0.898 | 0.781 | 0.938 | 0.625 | 0.811 |
+| sensitivity_at_least_0.80 | 0.41 | 0.898 | 0.781 | 0.875 | 0.688 | 0.800 |
+| sensitivity_at_least_0.90 | 0.38 | 0.898 | 0.781 | 0.938 | 0.625 | 0.811 |
+| fixed_0.50 | 0.50 | 0.898 | 0.781 | 0.750 | 0.813 | 0.774 |
+
+Decision:
+
+- Current research-profile lead: fixed-split `EMS+GazeBase+CRCNS+OneStop` five-seed late ensemble.
+- Best screening operating point: `best_f1` or `sensitivity_at_least_0.90`, with F1 0.811 and sensitivity 0.938.
+- Best balanced-specificity operating point: `best_balanced_accuracy`, with balanced accuracy 0.813 and specificity 1.000.
+- The `research_ems_only_bigger96` architecture line is closed because its five-seed result did not beat the existing candidates.
+- Late ensemble should only be used when `seed_coverage.csv` confirms complete coverage across all seeds.
+
 ## Current Best Statement
 
 The defensible current statement is:
 
 ```text
-Across five EMS stratified subject splits, masked event modeling followed by supervised fine-tuning improves the encoder pipeline over supervised-only training in the strongest phase-1 configuration. EMS-only MEM has the highest mean balanced accuracy, while EMS+GazeBase+CRCNS+OneStop has the highest mean AUC among public-data fusion candidates. Public data is therefore useful as transfer evidence, but more sources do not automatically improve the primary balanced-accuracy criterion. Frozen encoder probing is consistently weaker than fine-tuning.
+Across five randomized EMS stratified subject splits, masked event modeling followed by supervised fine-tuning improves the encoder pipeline over supervised-only training in the strongest phase-1 configuration. EMS-only MEM has the highest mean balanced accuracy, while EMS+GazeBase+CRCNS+OneStop has the highest mean AUC among public-data fusion candidates. Under a fixed EMS downstream split, the EMS+GazeBase+CRCNS+OneStop five-seed late ensemble reaches AUC 0.898, balanced accuracy up to 0.813, and F1 up to 0.811 depending on the validation-selected operating point. Public data is therefore useful as transfer evidence, but more sources do not automatically improve every criterion. Frozen encoder probing is consistently weaker than fine-tuning.
 ```
 
 ## Phase-2 Dual-Stream Closure

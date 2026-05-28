@@ -3,8 +3,8 @@ from __future__ import annotations
 import torch
 from torch import nn
 
-from eyenet.models.segment_sequence import MaskedAttentionPooling
 from eyenet.models.encoder import EyeMovementEncoder
+from eyenet.models.segment_sequence import MaskedAttentionPooling
 
 
 class DualStreamConcatAttentionModel(nn.Module):

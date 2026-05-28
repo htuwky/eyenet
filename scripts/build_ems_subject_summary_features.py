@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 SEGMENT_FEATURE_COLUMNS = [
     "n_fixations",
     "short_fixation_ratio_lt150ms",

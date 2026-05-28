@@ -114,7 +114,7 @@ def grid_coverage(x: pd.Series, y: pd.Series, bins: int) -> float:
         return np.nan
     x_bin = np.clip((x_clean[valid].to_numpy() * bins).astype(int), 0, bins - 1)
     y_bin = np.clip((y_clean[valid].to_numpy() * bins).astype(int), 0, bins - 1)
-    occupied = set(zip(x_bin, y_bin))
+    occupied = set(zip(x_bin, y_bin, strict=False))
     return float(len(occupied) / (bins * bins))
 
 

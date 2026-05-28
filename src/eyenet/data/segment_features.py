@@ -7,7 +7,6 @@ import pandas as pd
 
 from eyenet.data.features import add_descriptive, angle_entropy, bcea, grid_coverage
 
-
 SEGMENT_BASE_FEATURES = [
     "n_fixations",
     "fix_duration_ms_mean",

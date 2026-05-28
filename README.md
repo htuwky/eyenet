@@ -44,6 +44,7 @@ Current conclusion:
 - The main result is strict aligned five-seed BiGRU MEM pretraining followed by EMS supervised fine-tuning.
 - `EMS-only MEM BiGRU fine-tune` has the strongest mean test balanced accuracy.
 - `EMS + GazeBase + CRCNS_eye1 + OneStop` has the strongest mean test AUC among public-data fusion candidates.
+- The fixed-split `EMS + GazeBase + CRCNS_eye1 + OneStop` five-seed late ensemble is the current strongest research-profile result.
 - Public datasets help empirically, but more public sources do not automatically improve downstream EMS balanced accuracy.
 - Old segment-GRU dual-stream and new strict summary+encoder dual-stream runs are closed as exploratory evidence because they did not beat the encoder-only balanced-accuracy reference.
 - Transformer experiments are future exploratory work, not the current mainline.
@@ -52,6 +53,7 @@ See `docs/current_experiment_summary.md` for the current experiment table and ne
 See `docs/encoder_model_selection_summary.md` for the phase-1 encoder source-of-truth table.
 See `docs/old_encoder_dual_stream_closure.md` and `docs/new_summary_encoder_dual_stream_closure.md` for dual-stream closure.
 See `docs/model_profiles_and_next_steps.md` for the research/deployment profile strategy.
+See `docs/project_review_2026-05-28.md` for the latest fixed-split ensemble result and engineering review.
 See `docs/server_training_workflow.md` for the remote training and lightweight result-sync workflow.
 
 ## Environment Setup

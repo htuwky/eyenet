@@ -10,7 +10,6 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Inches, Pt, RGBColor
 
-
 DELIVERABLES = [
     (
         Path("docs/group_meeting_report_2026-05-28.md"),

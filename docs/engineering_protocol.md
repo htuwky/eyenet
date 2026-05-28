@@ -103,6 +103,14 @@ Verify the editable install:
 python -c "import eyenet; print(eyenet.__file__)"
 ```
 
+Install development tooling before running quality checks:
+
+```powershell
+python -m pip install -e ".[dev]"
+python -m pytest
+python -m ruff check .
+```
+
 Do not rely on ad hoc `PYTHONPATH` exports or per-script `sys.path.insert(...)` blocks as the normal workflow. The project uses a `src/` layout and should be run as an editable Python package during development.
 
 For Codex-run commands, prefer invoking the installed environment directly:
@@ -111,8 +119,49 @@ For Codex-run commands, prefer invoking the installed environment directly:
 conda run -n eyenet python <script>
 ```
 
+## Evaluation Validity Rules
+
+The current EMS mainline does not use official 4-fold cross-validation. It uses a subject-level fixed split:
+
+```text
+train / valid / test = 60 / 20 / 20
+active split file -> data/splits/EMS/ems_subject_split_60_20_20_seed42.csv
+primary split column -> split
+legacy metadata column -> official_fold
+```
+
+Use `split=train` for fitting, `split=valid` for epoch/threshold/calibration selection, and `split=test` only for final reporting.
+
+The `fold` column is retained only for legacy official-fold baselines, dataset metadata, and diagnostics. Do not use `fold` to drive the current research-profile or deployment-profile evaluation.
+
+Randomized multi-seed evaluation and fixed-split ensembling answer different questions.
+
+Use randomized multi-seed summaries for model-selection stability:
+
+```text
+different seed -> different subject split and model initialization
+valid summary -> mean/std across seeds
+invalid use -> averaging probabilities across seeds as if they shared one test set
+```
+
+Use fixed-split late ensembles only when every test subject has one prediction from every seed:
+
+```text
+same downstream split -> same test subjects across seeds
+required check -> seed_coverage.csv has n_seeds equal to the requested seed count
+required command option -> --require-complete-seeds
+ensemble grouping key -> split + subject_id + label, with fold retained only if present
+```
+
+If `seed_coverage.csv` shows incomplete coverage, the ensemble output is diagnostic only and must not be used as a primary result.
+
+Thresholds must be selected from validation predictions or validation-derived threshold files. Do not select thresholds by inspecting test performance.
+
 ## Next Engineering Priority
 
-The current completed adapters are HBN and GazeBase. The next code task is Saliency4ASD adapter development, followed by CRCNS eye-1 if the local raw files are available.
+The next engineering priority is deployment-profile packaging:
 
-Each new dataset should use the fixed baseline encoder settings first. Do not begin broad hyperparameter search until candidate data sources have been screened.
+1. Calibrate the fixed-split OneStop ensemble or the selected single checkpoint on validation predictions.
+2. Add a subject-level inference entrypoint that loads `best.pt` and `preprocessor.joblib`.
+3. Emit a stable risk-score output contract with QC warnings and model-version metadata.
+4. Keep Saliency4ASD deferred unless the project explicitly needs ASD auxiliary analysis.

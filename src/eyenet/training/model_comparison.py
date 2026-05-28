@@ -7,7 +7,6 @@ import pandas as pd
 
 from eyenet.training.baseline import compute_metrics
 
-
 METRIC_COLUMNS = ["auc", "accuracy", "balanced_accuracy", "sensitivity", "specificity", "f1"]
 
 

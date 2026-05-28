@@ -6,7 +6,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-
 ID_COLUMNS = {"subject_id", "label"}
 
 

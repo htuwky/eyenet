@@ -16,7 +16,6 @@ from eyenet.training.fixed_split_baseline import attach_fixed_split, make_predic
 from eyenet.training.thresholds import analyze_thresholds, choose_thresholds
 
 
-
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train EMS subject-summary baseline on a fixed subject split.")
     parser.add_argument("--summary", default="data/processed/EMS/ems_subject_summary_features.csv")
