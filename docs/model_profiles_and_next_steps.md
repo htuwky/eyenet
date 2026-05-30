@@ -1,6 +1,6 @@
 # EyeNet Model Profiles and Next Steps
 
-Last updated: 2026-05-28
+Last updated: 2026-05-31
 
 ## Purpose
 
@@ -93,10 +93,10 @@ fixed-split EMS+GazeBase+CRCNS+OneStop late ensemble: current research-profile l
 
 Current research work:
 
-1. Freeze the fixed-split OneStop five-seed late ensemble as the current research-profile lead.
-2. Update paper and report tables from `docs/current_experiment_summary.md` and `docs/project_review_2026-05-28.md`.
-3. Keep EMS-only as the randomized-split balanced-accuracy reference and screening baseline.
-4. Move new model work to deployment calibration and inference packaging unless a stronger hypothesis than the closed `bigger96` line is defined.
+1. Keep original 13-feature `EMS+GazeBase+CRCNS+OneStop` as the stable public-fusion baseline.
+2. Keep trend-only `EMS+GazeBase+CRCNS+OneStop` as the main generalization candidate.
+3. Report `trend + subject-centered position` as a closed negative feature-schema ablation.
+4. Run only small BiGRU tuning on the two surviving feature schemas before any Transformer comparison.
 
 ## Deployment Profile
 
@@ -134,10 +134,16 @@ Avoid in the first deployment prototype:
 Current deployment baseline:
 
 ```text
-encoder-only MEM BiGRU fine-tune
-threshold policy: sensitivity_at_least_0.90 or fixed-specificity policy, selected on validation only
+original 13-feature EMS+GazeBase+CRCNS+OneStop MEM BiGRU fine-tune
+threshold policy: validation-selected sensitivity-constrained or fixed-specificity policy
 output: risk_score + predicted_label + threshold + QC warnings + model_version
 ```
+
+Deployment candidate policy:
+
+- Primary baseline: original 13-feature public-fusion BiGRU, because it has lower AUC variance and more stable threshold behavior.
+- Secondary candidate: trend-only public-fusion BiGRU, because it improves mean AUC but needs stability checks.
+- Rejected candidate: trend + subject-centered position public-fusion BiGRU, because it lowered AUC and balanced accuracy.
 
 Future deployment entry point:
 
@@ -202,10 +208,11 @@ Result:
 
 Current immediate next steps:
 
-1. Update paper/report tables from `docs/current_experiment_summary.md`.
-2. Treat `experiments/research_profile/fixed_split_onestop_ensemble/` as the research-profile source of truth for fixed-split ensemble reporting.
-3. Add deployment-profile calibration and inference packaging only after the research table is frozen.
-4. Do not resume broad BiGRU architecture search unless a new hypothesis is stronger than the closed `bigger96` result.
+1. Freeze the current engineering state and push the stage checkpoint.
+2. Run a narrow BiGRU tuning grid on original 13-feature and trend-only public-fusion candidates.
+3. Compare results by five-seed AUC mean/std, balanced accuracy mean/std, F1 mean/std, and sensitivity/specificity tradeoff.
+4. Only after BiGRU tuning saturates, run one minimal Transformer comparison under the same feature schema and split policy.
+5. Add deployment-profile calibration and inference packaging after the candidate model is selected.
 
 ## Reporting Rule
 

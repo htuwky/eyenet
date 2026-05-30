@@ -61,6 +61,8 @@ train_mem_pretrain.py
 train_supervised_encoder_smoke.py
 summarize_encoder_transfer_results.py
 summarize_phase1_encoder_results.py
+run_phase1_onestop_trend_only_ablation.py
+add_encoder_subject_centered_position_features.py
 ```
 
 ## Analysis and Diagnostics
@@ -125,4 +127,12 @@ docs/old_encoder_dual_stream_closure.md
 docs/new_summary_encoder_dual_stream_closure.md
 ```
 
-Transformer, Saliency4ASD, and additional dual-stream design are deferred until the phase-1 report and paper draft are stable.
+Current feature-schema decision:
+
+```text
+original 13-feature public-fusion BiGRU: deployment baseline
+trend-only public-fusion BiGRU: research/generalization candidate
+trend + subject-centered position public-fusion BiGRU: closed negative ablation
+```
+
+Transformer, Saliency4ASD, and additional dual-stream design are deferred until the phase-1 report and BiGRU candidate decision are stable.

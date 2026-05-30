@@ -10,6 +10,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run one encoder architecture pretraining/downstream experiment.")
     parser.add_argument("--name", required=True, help="Experiment name used under output roots.")
     parser.add_argument("--pretrain-events", required=True)
+    parser.add_argument("--pretrain-schema", default="configs/features/encoder_no_position_core.json")
     parser.add_argument("--pretrain-split", required=True)
     parser.add_argument("--downstream-events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
     parser.add_argument("--downstream-schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
@@ -55,6 +56,8 @@ def main() -> None:
             "scripts/train_mem_pretrain.py",
             "--events",
             args.pretrain_events,
+            "--schema",
+            args.pretrain_schema,
             "--split",
             args.pretrain_split,
             "--output-dir",

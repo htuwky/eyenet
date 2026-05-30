@@ -30,6 +30,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--aligned-split-dir", default="data/processed/mixed/multiseed_aligned_fusion")
     parser.add_argument("--pretrain-root", default="experiments/encoder_pretraining/fusion_ablation")
     parser.add_argument("--downstream-root", default="experiments/encoder_downstream/fusion_ablation")
+    parser.add_argument("--pretrain-schema", default="configs/features/encoder_no_position_core.json")
+    parser.add_argument("--downstream-schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
     parser.add_argument("--name-prefix", default="bigru64_mask045_fusion")
     parser.add_argument("--encoder-type", choices=["bigru_attention", "transformer"], default="bigru_attention")
     parser.add_argument("--projection-dim", type=int, default=64)
@@ -48,6 +50,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--supervised-patience", type=int, default=12)
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--stages", default="split,experiment", help="Comma-separated stages: split,experiment.")
+    parser.add_argument(
+        "--architecture-stages",
+        default="mem,finetune,frozen",
+        help="Comma-separated stages passed to run_encoder_architecture_experiment.py: mem,finetune,frozen.",
+    )
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
@@ -135,8 +142,12 @@ def run_experiment(
         str(events_path),
         "--pretrain-split",
         str(aligned_split),
+        "--pretrain-schema",
+        args.pretrain_schema,
         "--downstream-split",
         str(anchor_split_path(args, seed)),
+        "--downstream-schema",
+        args.downstream_schema,
         "--pretrain-root",
         args.pretrain_root,
         "--downstream-root",
@@ -175,6 +186,8 @@ def run_experiment(
         str(args.supervised_patience),
         "--device",
         args.device,
+        "--stages",
+        args.architecture_stages,
     ]
     if args.force:
         command.append("--force")

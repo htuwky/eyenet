@@ -1,6 +1,6 @@
 # Current Experiment Summary
 
-Last updated: 2026-05-28
+Last updated: 2026-05-31
 
 This document summarizes the current EyeNet encoder-pretraining state after dataset screening, numerical-stability fixes, and the first controlled aligned multi-seed model-selection run.
 
@@ -8,12 +8,14 @@ This document summarizes the current EyeNet encoder-pretraining state after data
 
 EyeNet uses fixation-event sequences as the universal model input. Raw gaze datasets are adapter inputs only and must be converted to fixation events before encoder training.
 
-The active universal encoder feature schema is:
+The original phase-1 encoder feature schema is:
 
 ```text
 encoder_no_position_core
 n_features: 13
 ```
+
+Note: `encoder_no_position_core` is a historical filename. It does include screen-relative fixation position (`x_norm`, `y_norm`) and should be described in reports as the original 13-feature encoder schema, not as a true no-position schema.
 
 Feature columns:
 
@@ -35,6 +37,34 @@ event_index_in_segment_norm
 
 No image, video, task-name, stimulus-category, AOI, or content-derived feature is used as an encoder feature.
 
+Trend-only phase-1 public-fusion ablation schema:
+
+```text
+encoder_trend_only_core
+n_features: 11
+excluded:
+  x_norm
+  y_norm
+```
+
+This schema keeps fixation duration and fixation-to-fixation transition dynamics while removing screen-relative fixation position. It is designed to compare directly against the phase-1 `EMS+GazeBase+CRCNS+OneStop BiGRU` fine-tune five-seed row, where the original 13-feature schema reported AUC mean 0.825, AUC std 0.044, balanced accuracy mean 0.731, balanced accuracy std 0.047, sensitivity mean 0.775, and specificity mean 0.688.
+
+Trend plus subject-centered position ablation schema:
+
+```text
+encoder_trend_plus_subject_position_core
+n_features: 14
+excluded:
+  x_norm
+  y_norm
+added:
+  x_subject_centered_norm
+  y_subject_centered_norm
+  subject_centered_position_radius_norm
+```
+
+This schema tested whether retaining within-subject relative fixation position could recover useful spatial information without using raw screen coordinates.
+
 ## Dataset Processing Status
 
 | Dataset | Status | Subjects | Fixation Events | Notes |
@@ -42,7 +72,7 @@ No image, video, task-name, stimulus-category, AOI, or content-derived feature i
 | EMS | Complete | 160 | 225,159 | Main SZ/HC downstream benchmark. Uses clipped-QC no-position encoder table. |
 | HBN | Complete | 1,244 usable after QC | 1,684,382 after QC | Public unlabeled MEM source. Technically integrated; not currently the best transfer source. |
 | GazeBase | Complete | 322 | 843,517 | Video tasks `VD1,VD2`; high-specificity single-split behavior. |
-| OneStop | Complete | 360 | 2,042,834 | Reading fixation corpus; technically integrated, but less promising for EMS transfer than CRCNS in current runs. |
+| OneStop | Complete | 360 | 2,042,834 | Reading fixation corpus; useful as part of the strongest current public-fusion candidate. |
 | CRCNS eye-1 | Complete | 16 | 67,172 | Natural movie-viewing fixations; currently the most useful public source for EMS transfer experiments. |
 | Saliency4ASD | Deferred | TBD | TBD | Pseudo-subject/session structure and ASD labels make it lower priority. Do not merge ASD labels with SZ/HC. |
 
@@ -180,6 +210,35 @@ Decision:
 - Do not claim that adding more public data monotonically improves transfer.
 - Do not use frozen encoder probing as the main downstream method.
 
+## Feature-Schema Ablation Closure
+
+After the original 13-feature public-fusion model was selected as the strongest public-data AUC candidate, two position-handling ablations were run on the same `EMS+GazeBase+CRCNS+OneStop` pretraining source.
+
+Primary protocol:
+
+```text
+downstream: EMS subject-level 60/20/20 split
+seeds: 0,1,2,3,4
+mode: MEM pretraining followed by EMS supervised fine-tuning
+model: BiGRU attention encoder
+```
+
+Summary:
+
+| Feature schema | Threshold policy | AUC Mean | AUC Std | Balanced Accuracy Mean | Balanced Accuracy Std | Sensitivity Mean | Specificity Mean | F1 Mean | Decision |
+| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |
+| original 13-feature | valid_best_balanced_accuracy | 0.825 | 0.044 | 0.731 | 0.047 | 0.775 | 0.688 | 0.740 | Deployment baseline |
+| trend-only | default_0.50 | 0.843 | 0.089 | 0.756 | 0.084 | 0.763 | 0.750 | 0.755 | Research/generalization candidate |
+| trend-only | valid_best_balanced_accuracy | 0.843 | 0.089 | 0.738 | 0.057 | 0.763 | 0.713 | 0.741 | Research/generalization candidate |
+| trend + subject-centered position | valid_best_balanced_accuracy | 0.770 | 0.078 | 0.694 | 0.075 | 0.700 | 0.688 | 0.692 | Closed negative result |
+
+Decision:
+
+- Keep the original 13-feature `EMS+GazeBase+CRCNS+OneStop` BiGRU as the current deployment baseline because it is more stable.
+- Keep trend-only `EMS+GazeBase+CRCNS+OneStop` BiGRU as the current research/generalization candidate because it improves mean AUC but has larger seed-to-seed variance.
+- Close `trend + subject-centered position`; it does not combine the strengths of original position and trend-only features.
+- Do not expand the subject-centered position line unless a new, stronger hypothesis is defined.
+
 ## Research Profile Fixed-Split Ensemble Result
 
 After the phase-1 randomized-split model selection, the strongest public-data candidate was rerun under one fixed EMS downstream split:
@@ -309,11 +368,11 @@ only final candidates receive profile-specific optimization
 
 Immediate order:
 
-1. Recompute existing encoder predictions under F1-oriented and sensitivity-constrained validation thresholds.
-2. Keep the current encoder-only MEM BiGRU fine-tune result as the phase-1 main model and deployment baseline.
-3. Start research-profile BiGRU hyperparameter ablation only after threshold-only gains are checked.
-4. Treat dual-stream as closed exploratory negative evidence under the current EMS label scale.
-5. Keep Transformer experiments as future exploratory work unless the research-profile BiGRU ablation saturates.
+1. Freeze the feature-schema decision: original 13-feature is the deployment baseline, trend-only is the research/generalization candidate, and trend + subject-centered position is closed.
+2. Run only small, hypothesis-driven BiGRU tuning on the two surviving candidates: original 13-feature and trend-only.
+3. Prioritize `dropout` and `mask_probability`; do not restart broad architecture search.
+4. Treat Transformer as a later architecture-control experiment, not the next deployment candidate.
+5. Treat dual-stream as closed exploratory negative evidence under the current EMS label scale.
 
 See:
 

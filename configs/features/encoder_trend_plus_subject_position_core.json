@@ -1,0 +1,49 @@
+{
+  "name": "encoder_trend_plus_subject_position_core",
+  "version": 1,
+  "description": "Encoder event feature schema that keeps timing and transition dynamics plus subject-centered fixation position, while excluding raw screen-relative x/y coordinates.",
+  "metadata_columns": [
+    "dataset_id",
+    "subject_id",
+    "split",
+    "fold",
+    "label",
+    "segment_index",
+    "event_index_in_segment"
+  ],
+  "feature_columns": [
+    "duration_ms",
+    "log_duration_ms",
+    "saccade_dx_norm",
+    "saccade_dy_norm",
+    "saccade_amplitude_norm",
+    "saccade_angle_sin",
+    "saccade_angle_cos",
+    "transition_missing",
+    "is_first_event_in_segment",
+    "is_last_event_in_segment",
+    "event_index_in_segment_norm",
+    "x_subject_centered_norm",
+    "y_subject_centered_norm",
+    "subject_centered_position_radius_norm"
+  ],
+  "excluded_columns": [
+    "x_norm",
+    "y_norm",
+    "x_dva",
+    "y_dva",
+    "subject_event_index_norm",
+    "segment_index_norm",
+    "subject_event_index"
+  ],
+  "normalization": {
+    "fit_on": "train_only",
+    "method": "standard_scaler_after_imputation"
+  },
+  "notes": [
+    "Use this schema to test whether removing absolute screen position while retaining within-subject relative fixation location improves generalization.",
+    "The subject-centered position columns should be generated with scripts/add_encoder_subject_centered_position_features.py.",
+    "Raw screen-relative x/y fixation coordinates are intentionally excluded.",
+    "No visual stimulus content is used."
+  ]
+}
