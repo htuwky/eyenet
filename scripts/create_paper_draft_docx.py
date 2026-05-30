@@ -126,7 +126,7 @@ def main() -> None:
         doc,
         [
             "Universal input unit: fixation event.",
-            "Universal feature schema: encoder_no_position_core, 13 features.",
+            "Universal feature schema: encoder_original_13feature_core, 13 features.",
             "Primary downstream target: EMS SZ/HC classification.",
             "Public datasets are used for self-supervised pretraining unless a dataset-specific auxiliary head is explicitly defined.",
         ],

@@ -12,7 +12,7 @@ from eyenet.data.encoder_ready import describe_series, load_feature_schema
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Combine multiple encoder-ready fixation event tables.")
     parser.add_argument("--inputs", nargs="+", required=True, help="Encoder-ready CSV files to combine.")
-    parser.add_argument("--schema", default="configs/features/encoder_no_position_core.json")
+    parser.add_argument("--schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--output", required=True)
     parser.add_argument("--summary", default=None)
     return parser.parse_args()

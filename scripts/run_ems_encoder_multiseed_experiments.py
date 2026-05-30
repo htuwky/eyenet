@@ -10,7 +10,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Run multi-seed EMS encoder pretraining/downstream experiments.")
     parser.add_argument("--seeds", default="0,1,2,3,4", help="Comma-separated random seeds.")
     parser.add_argument("--events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
-    parser.add_argument("--schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
+    parser.add_argument("--schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--subjects", default="data/processed/EMS/ems_subject_features_segment_agg_no_pupil.csv")
     parser.add_argument("--split-dir", default="data/splits/EMS/multiseed")
     parser.add_argument("--pretrain-root", default="experiments/encoder_pretraining/ems_mem_multiseed")

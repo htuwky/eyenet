@@ -11,11 +11,11 @@ EyeNet uses fixation-event sequences as the universal model input. Raw gaze data
 The original phase-1 encoder feature schema is:
 
 ```text
-encoder_no_position_core
+encoder_original_13feature_core
 n_features: 13
 ```
 
-Note: `encoder_no_position_core` is a historical filename. It does include screen-relative fixation position (`x_norm`, `y_norm`) and should be described in reports as the original 13-feature encoder schema, not as a true no-position schema.
+Legacy note: `encoder_no_position_core` remains as a backward-compatible alias, but it includes screen-relative fixation position (`x_norm`, `y_norm`). New runs should use `encoder_original_13feature_core` when the original 13-feature schema is intended.
 
 Feature columns:
 
@@ -69,7 +69,7 @@ This schema tested whether retaining within-subject relative fixation position c
 
 | Dataset | Status | Subjects | Fixation Events | Notes |
 | --- | --- | ---: | ---: | --- |
-| EMS | Complete | 160 | 225,159 | Main SZ/HC downstream benchmark. Uses clipped-QC no-position encoder table. |
+| EMS | Complete | 160 | 225,159 | Main SZ/HC downstream benchmark. Uses the clipped-QC original 13-feature encoder table; the path name still contains legacy `no_position`. |
 | HBN | Complete | 1,244 usable after QC | 1,684,382 after QC | Public unlabeled MEM source. Technically integrated; not currently the best transfer source. |
 | GazeBase | Complete | 322 | 843,517 | Video tasks `VD1,VD2`; high-specificity single-split behavior. |
 | OneStop | Complete | 360 | 2,042,834 | Reading fixation corpus; useful as part of the strongest current public-fusion candidate. |
@@ -238,6 +238,7 @@ Decision:
 - Keep trend-only `EMS+GazeBase+CRCNS+OneStop` BiGRU as the current research/generalization candidate because it improves mean AUC but has larger seed-to-seed variance.
 - Close `trend + subject-centered position`; it does not combine the strengths of original position and trend-only features.
 - Do not expand the subject-centered position line unless a new, stronger hypothesis is defined.
+- Before the next BiGRU tuning pass, run sequence-length diagnostics for the surviving original 13-feature and trend-only candidates to quantify how much `max_seq_len=1500` truncates each split.
 
 ## Research Profile Fixed-Split Ensemble Result
 

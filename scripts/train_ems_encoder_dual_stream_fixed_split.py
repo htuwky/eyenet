@@ -20,7 +20,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--macro-segments", default="data/processed/EMS/ems_segment_features_no_pupil.csv")
     parser.add_argument("--encoder-events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
-    parser.add_argument("--encoder-schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
+    parser.add_argument("--encoder-schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--split", default="data/splits/EMS/ems_subject_split_60_20_20_seed42.csv")
     parser.add_argument("--output-dir", default="experiments/ems_encoder_dual_stream/seed42/gated")
     parser.add_argument("--fusion", choices=["concat", "gated"], default="gated")
@@ -114,4 +114,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

@@ -26,7 +26,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--require-complete-seeds",
         action="store_true",
-        help="Require every ensemble row in the selected split to have predictions from all discovered seeds.",
+        help="Deprecated compatibility flag. Complete seed coverage is required by default.",
+    )
+    parser.add_argument(
+        "--allow-incomplete-seeds",
+        action="store_true",
+        help="Allow incomplete seed coverage for diagnostics only. Do not use this for publication or main model claims.",
     )
     parser.add_argument("--threshold", type=float, default=0.5)
     return parser.parse_args()
@@ -58,10 +63,21 @@ def main() -> None:
         .reset_index(name="n_rows")
         .sort_values("n_seeds")
     )
-    if args.require_complete_seeds:
-        ensemble = ensemble[ensemble["n_seeds"] == n_input_seeds].copy()
-        if ensemble.empty:
-            raise ValueError(f"No rows have predictions from all {n_input_seeds} seeds.")
+    output_dir = Path(args.output_dir) if args.output_dir else Path(args.experiment_dir)
+    if args.contains and args.output_dir is None:
+        output_dir = output_dir / f"{args.contains}_ensemble"
+
+    incomplete_coverage = (ensemble["n_seeds"] < n_input_seeds).any()
+    if incomplete_coverage and not args.allow_incomplete_seeds:
+        output_dir.mkdir(parents=True, exist_ok=True)
+        seed_coverage.to_csv(output_dir / "seed_coverage.csv", index=False, encoding="utf-8-sig")
+        print("Seed coverage")
+        print(seed_coverage.to_string(index=False))
+        raise ValueError(
+            f"Incomplete seed coverage: at least one ensemble row has fewer than {n_input_seeds} seeds. "
+            f"Saved seed coverage to {output_dir / 'seed_coverage.csv'}. "
+            "Use --allow-incomplete-seeds only for diagnostics."
+        )
 
     threshold_metrics = analyze_thresholds(ensemble)
     selected_thresholds = choose_thresholds(threshold_metrics)
@@ -70,16 +86,15 @@ def main() -> None:
         ignore_index=True,
     )
 
-    output_dir = Path(args.output_dir) if args.output_dir else Path(args.experiment_dir)
-    if args.contains and args.output_dir is None:
-        output_dir = output_dir / f"{args.contains}_ensemble"
     save_ensemble_predictions(output_dir, seed_predictions, ensemble)
     save_threshold_outputs(output_dir, threshold_metrics, selected_thresholds)
     seed_coverage.to_csv(output_dir / "seed_coverage.csv", index=False, encoding="utf-8-sig")
 
+    if incomplete_coverage:
+        print("WARNING: incomplete seed coverage; ensemble metrics are diagnostics only.")
     if seed_coverage["n_seeds"].max() < n_input_seeds:
         print(f"WARNING: no ensemble rows include all {n_input_seeds} seeds.")
-    elif (ensemble["n_seeds"] < n_input_seeds).any():
+    elif incomplete_coverage:
         print(f"WARNING: some ensemble rows include fewer than {n_input_seeds} seeds.")
     print("Seed coverage")
     print(seed_coverage.to_string(index=False))

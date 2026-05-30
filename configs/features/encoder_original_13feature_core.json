@@ -1,7 +1,7 @@
 {
-  "name": "encoder_no_position_core",
+  "name": "encoder_original_13feature_core",
   "version": 1,
-  "description": "Legacy alias for the original 13-feature encoder schema. Despite the filename, this schema includes screen-relative fixation position x_norm/y_norm.",
+  "description": "Content-agnostic original 13-feature event schema for cross-dataset encoder pretraining. Includes screen-relative fixation position x_norm/y_norm.",
   "metadata_columns": [
     "dataset_id",
     "subject_id",
@@ -46,8 +46,8 @@
   },
   "notes": [
     "No visual stimulus content is used.",
-    "Legacy warning: this file is not a true no-position schema because x_norm and y_norm are included.",
-    "Prefer configs/features/encoder_original_13feature_core.json for new runs.",
+    "This is the original phase-1 encoder schema and should be reported as original 13-feature, not no-position.",
+    "Raw screen-relative x/y fixation coordinates are included.",
     "DVA features are optional because they require reliable hardware metadata."
   ]
 }

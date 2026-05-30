@@ -29,7 +29,7 @@ docs/current_experiment_summary.md
 | HBN adapter | Done | `scripts/build_hbn_fixation_events.py` converts HBN raw gaze to fixation events with I-DT. |
 | GazeBase adapter | Done | `scripts/build_gazebase_fixation_events.py` converts GazeBase raw DVA gaze to fixation events with I-DT. |
 | Dataset adapters | In progress | Saliency4ASD and CRCNS eye-1 remain to be screened. |
-| Encoder-ready feature schema | Done | Current default is `encoder_no_position_core`, 13 always-available features. |
+| Encoder-ready feature schema | Done | Current original 13-feature schema is `encoder_original_13feature_core`. Legacy generated paths may still contain `no_position` in their directory names. |
 | Encoder DataLoader | Done | Subject-level sequences with mask, IDs, train-only normalization, and optional labels for self-supervised data. |
 | Masked event pretraining script | Done | Uses fixation span masking by default and checkpoint exports `encoder_state_dict`. |
 | Pretrained encoder downstream transfer | Initial version done | Compared from-scratch, fine-tuned pretrained, and frozen pretrained encoders on EMS. |
@@ -196,13 +196,13 @@ The first encoder-ready EMS table uses the recommended default:
 
 ```text
 dataset variant: clipped_qc
-feature schema: encoder_no_position_core
+feature schema: encoder_original_13feature_core
 ```
 
 Feature schema:
 
 ```text
-configs/features/encoder_no_position_core.json
+configs/features/encoder_original_13feature_core.json
 ```
 
 Output:
@@ -213,6 +213,8 @@ data/processed/EMS/encoder_ready/clipped_qc_no_position/
   feature_schema.json
   encoder_ready_summary.json
 ```
+
+The `clipped_qc_no_position` directory name is historical. The original table includes screen-relative `x_norm` and `y_norm`; true no-position comparisons should use an explicit ablation schema such as `configs/features/encoder_trend_only_core.json`.
 
 Current summary:
 
@@ -244,7 +246,7 @@ Smoke-test command:
 ```powershell
 python scripts/check_encoder_dataloader.py `
   --events data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv `
-  --schema data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json `
+  --schema configs/features/encoder_original_13feature_core.json `
   --split data/splits/EMS/ems_subject_split_60_20_20_seed42.csv `
   --batch-size 8
 ```

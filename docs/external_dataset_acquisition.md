@@ -38,7 +38,7 @@ Before a dataset can enter encoder pretraining, it must have:
 1. A raw-to-event conversion script.
 2. A schema validation report.
 3. A subject-level QC report.
-4. An encoder-ready table using `configs/features/encoder_no_position_core.json`.
+4. An encoder-ready table using `configs/features/encoder_original_13feature_core.json` unless a named ablation schema is being tested.
 5. A single-dataset masked-event smoke test.
 
 ## Training Protocol

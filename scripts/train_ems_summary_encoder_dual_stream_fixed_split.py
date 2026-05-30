@@ -18,7 +18,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train EMS strict-summary + pretrained encoder dual-stream fusion.")
     parser.add_argument("--subject-summary", default="data/processed/EMS/ems_subject_summary_features.csv")
     parser.add_argument("--encoder-events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
-    parser.add_argument("--encoder-schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
+    parser.add_argument("--encoder-schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--split", default="data/splits/EMS/multiseed/ems_subject_split_60_20_20_seed0.csv")
     parser.add_argument("--output-dir", default="experiments/ems_summary_encoder_dual_stream/seed0/concat")
     parser.add_argument("--fusion", choices=["concat", "gated", "residual_logit"], default="concat")

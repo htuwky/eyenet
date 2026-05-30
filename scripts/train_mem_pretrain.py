@@ -15,7 +15,7 @@ from eyenet.training.masked_event_modeling import (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Train the universal fixation encoder with masked event modeling.")
     parser.add_argument("--events", required=True)
-    parser.add_argument("--schema", default="configs/features/encoder_no_position_core.json")
+    parser.add_argument("--schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--split", required=True)
     parser.add_argument("--output-dir", required=True)
     parser.add_argument("--batch-size", type=int, default=8)

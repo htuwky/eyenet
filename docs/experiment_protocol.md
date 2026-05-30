@@ -73,6 +73,12 @@ The default workflow is not to train every experiment twice. Train once, save ch
 
 Profile-specific extra training is reserved for final candidates only.
 
+Late-ensemble rule:
+
+- Publication or main-model ensemble metrics require complete seed coverage for every evaluated subject.
+- Incomplete seed coverage may be written as `seed_coverage.csv` and used for diagnostics only.
+- Use `--allow-incomplete-seeds` only when intentionally producing diagnostic ensemble output.
+
 See:
 
 ```text

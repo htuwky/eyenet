@@ -21,9 +21,12 @@ Legacy scripts that train on `fold` are not the current mainline.
 - Encoder-ready EMS table: `data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv`
 - Encoder-ready HBN table: `data/processed/HBN/encoder_ready/no_position/hbn_encoder_events_qc.csv`
 - Encoder-ready GazeBase table: `data/processed/GazeBase/encoder_ready/no_position/gazebase_encoder_events.csv`
+- Original 13-feature encoder schema: `configs/features/encoder_original_13feature_core.json`
+- True trend-only encoder ablation schema: `configs/features/encoder_trend_only_core.json`
 - Fixed-split OneStop ensemble root: `experiments/research_profile/fixed_split_onestop_ensemble/`
 
 All active model features are derived from eye-tracking traces and acquisition metadata, not from image or video content.
+Some historical data directories still contain `no_position` in their path names. Treat schema files, not directory names, as the authority on which features are used.
 
 ## Active Experiment Configs
 

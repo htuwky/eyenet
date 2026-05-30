@@ -16,7 +16,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--subject-summary", default="data/processed/EMS/ems_subject_summary_features.csv")
     parser.add_argument("--summary-feature-set", choices=["full", "strict"], default="strict")
     parser.add_argument("--encoder-events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
-    parser.add_argument("--encoder-schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
+    parser.add_argument("--encoder-schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument(
         "--checkpoint-template",
         default=(

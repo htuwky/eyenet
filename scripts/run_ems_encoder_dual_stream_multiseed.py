@@ -15,7 +15,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--name-prefix", default="bigru64_onestop_encoder_dual")
     parser.add_argument("--macro-segments", default="data/processed/EMS/ems_segment_features_no_pupil.csv")
     parser.add_argument("--encoder-events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
-    parser.add_argument("--encoder-schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
+    parser.add_argument("--encoder-schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument(
         "--checkpoint-template",
         default=(
@@ -133,4 +133,3 @@ def quote_arg(value: str) -> str:
 
 if __name__ == "__main__":
     main()
-

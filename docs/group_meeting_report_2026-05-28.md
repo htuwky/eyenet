@@ -33,7 +33,7 @@ MEM 预训练的价值主要体现在 fine-tuning 初始化上，frozen probing 
 
 因此当前主输入被固定为 fixation/event 级特征，而不是原始 gaze 采样点或刺激内容特征。
 
-当前 encoder 输入 schema 为 `encoder_no_position_core`，共 13 个特征：
+当前 encoder 输入 schema 为 `encoder_original_13feature_core`，共 13 个特征：
 
 ```text
 x_norm

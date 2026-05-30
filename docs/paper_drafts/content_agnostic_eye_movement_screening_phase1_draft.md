@@ -55,7 +55,7 @@ HBN 当前有 1,244 名 usable subjects 和 1,684,382 个 events。HBN 具有丰
 
 ### 3.1 内容无关事件表征
 
-所有数据集首先被转换到共享 fixation/event schema。当前 encoder 使用 `encoder_no_position_core`，共 13 个特征：
+所有数据集首先被转换到共享 fixation/event schema。当前 encoder 使用 `encoder_original_13feature_core`，共 13 个特征：
 
 ```text
 x_norm

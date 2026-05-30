@@ -72,7 +72,7 @@ Allowed methods:
 - validation-selected best balanced accuracy threshold
 - sensitivity-constrained threshold reports
 - selective public-data pretraining source choices
-- late probability ensemble
+- late probability ensemble with complete evaluated-subject seed coverage
 - calibrated probability ensemble
 
 Not allowed:
@@ -209,10 +209,11 @@ Result:
 Current immediate next steps:
 
 1. Freeze the current engineering state and push the stage checkpoint.
-2. Run a narrow BiGRU tuning grid on original 13-feature and trend-only public-fusion candidates.
-3. Compare results by five-seed AUC mean/std, balanced accuracy mean/std, F1 mean/std, and sensitivity/specificity tradeoff.
-4. Only after BiGRU tuning saturates, run one minimal Transformer comparison under the same feature schema and split policy.
-5. Add deployment-profile calibration and inference packaging after the candidate model is selected.
+2. Run sequence-length diagnostics for original 13-feature and trend-only public-fusion candidates before changing BiGRU hyperparameters.
+3. Run a narrow BiGRU tuning grid on original 13-feature and trend-only public-fusion candidates.
+4. Compare results by five-seed AUC mean/std, balanced accuracy mean/std, F1 mean/std, and sensitivity/specificity tradeoff.
+5. Only after BiGRU tuning saturates, run one minimal Transformer comparison under the same feature schema and split policy.
+6. Add deployment-profile calibration and inference packaging after the candidate model is selected.
 
 ## Reporting Rule
 

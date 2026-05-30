@@ -77,6 +77,7 @@ analyze_thresholds.py
 compare_models_bootstrap.py
 diagnose_ems_fold_distribution.py
 diagnose_event_temporal_sequence.py
+diagnose_encoder_sequence_lengths.py
 summarize_fixed_split_results.py
 summarize_qc_variant_results.py
 summarize_old_encoder_dual_stream.py

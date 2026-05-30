@@ -31,7 +31,7 @@ Implemented:
 - Event-temporal sequence stream.
 - Dual-stream concat and gated fusion experiments.
 - Subject-level QC reports and filtered EMS variants.
-- Encoder-ready no-position event table.
+- Encoder-ready original 13-feature event table plus explicit trend-only ablation schemas.
 - Masked-event self-supervised pretraining smoke test.
 - Supervised encoder downstream transfer smoke test.
 - Dataset configs and acquisition notes for EMS, GazeBase, HBN, CRCNS eye-1, and Saliency4ASD.
@@ -45,6 +45,7 @@ Current conclusion:
 - `EMS-only MEM BiGRU fine-tune` has the strongest mean test balanced accuracy.
 - `EMS + GazeBase + CRCNS_eye1 + OneStop` has the strongest mean test AUC among public-data fusion candidates.
 - The fixed-split `EMS + GazeBase + CRCNS_eye1 + OneStop` five-seed late ensemble is the current strongest research-profile result.
+- Late ensemble results require complete test-subject seed coverage; otherwise they are diagnostics only.
 - Public datasets help empirically, but more public sources do not automatically improve downstream EMS balanced accuracy.
 - Old segment-GRU dual-stream and new strict summary+encoder dual-stream runs are closed as exploratory evidence because they did not beat the encoder-only balanced-accuracy reference.
 - Transformer experiments are future exploratory work, not the current mainline.

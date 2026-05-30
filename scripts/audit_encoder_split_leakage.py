@@ -86,7 +86,7 @@ def main() -> None:
     output_path.parent.mkdir(parents=True, exist_ok=True)
     audit.to_csv(output_path, index=False, encoding="utf-8-sig")
     print(audit.to_string(index=False))
-    failures = audit[not audit["passed"]] if "passed" in audit.columns else audit
+    failures = audit[~audit["passed"]] if "passed" in audit.columns else audit
     if not failures.empty:
         raise SystemExit(f"Leakage audit failed for {len(failures)} split rows. See {output_path}")
     print(f"\nLeakage audit passed: {len(audit)} split rows written to {output_path}")

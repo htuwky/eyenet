@@ -29,7 +29,7 @@ multi-dataset self-supervised eye-movement encoder
 - External disease labels must not be merged into one binary "mental disorder" label.
 - GazeBase, CRCNS eye-1, HBN, and Saliency4ASD are mainly for encoder pretraining or auxiliary analysis, not direct SZ supervised training.
 - EMS remains the current supervised downstream benchmark.
-- The first encoder feature schema is `encoder_no_position_core`, with 13 always-available features.
+- The first encoder feature schema is now named `encoder_original_13feature_core`, with 13 always-available features. Historical notes may still mention `encoder_no_position_core`, which is a backward-compatible alias and includes `x_norm`/`y_norm`.
 - Do not use image/video content as model input.
 
 ## Local Raw Data Status
@@ -77,7 +77,7 @@ data/raw/HBN/data.zip
   -> convert raw samples to shared EyeNet event schema
   -> validate schema
   -> subject-level QC
-  -> encoder-ready no-position table
+  -> encoder-ready original 13-feature table, or an explicit ablation schema when testing no-position/trend-only variants
   -> HBN masked-event smoke test
 ```
 

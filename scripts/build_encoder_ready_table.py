@@ -15,7 +15,7 @@ from eyenet.data.encoder_ready import (
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Build an encoder-ready event table from an event-temporal sequence table.")
     parser.add_argument("--input", default="data/processed/EMS/filtered/clipped_qc/ems_event_temporal_sequences_no_pupil.csv")
-    parser.add_argument("--schema", default="configs/features/encoder_no_position_core.json")
+    parser.add_argument("--schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--output-dir", default="data/processed/EMS/encoder_ready/clipped_qc_no_position")
     parser.add_argument("--table-name", default="ems_encoder_events.csv")
     return parser.parse_args()

@@ -12,7 +12,7 @@ from eyenet.data.encoder_ready import load_feature_schema
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Smoke-test encoder-ready Dataset/DataLoader outputs.")
     parser.add_argument("--events", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/ems_encoder_events.csv")
-    parser.add_argument("--schema", default="data/processed/EMS/encoder_ready/clipped_qc_no_position/feature_schema.json")
+    parser.add_argument("--schema", default="configs/features/encoder_original_13feature_core.json")
     parser.add_argument("--split", default="data/splits/EMS/ems_subject_split_60_20_20_seed42.csv")
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--max-seq-len", type=int, default=None)
